@@ -2,7 +2,6 @@
 
 var select = require('../');
 var split = require('split');
-var tokenize = require('html-tokenize');
 var fs = require('fs');
 
 var selector = process.argv.slice(2).join(' ');
@@ -15,5 +14,7 @@ process.stdin
 ;
 
 function parseLine (s) {
-    if (/\S/.test(s)) return JSON.parse(s);
+    if (!/\S/.test(s)) return;
+    var parts = JSON.parse(s);
+    return [ parts[0], Buffer(parts[1]) ];
 }

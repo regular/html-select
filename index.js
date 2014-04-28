@@ -3,6 +3,7 @@ var Writable = require('readable-stream').Writable;
 var parseTag = require('./lib/tag.js');
 var parseSelector = require('./lib/selector.js');
 var match = require('./lib/match.js');
+var copy = require('shallow-copy');
 
 var special = (function () {
     var tags = [
