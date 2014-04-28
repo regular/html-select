@@ -2,6 +2,8 @@
 
 match a tokenized html stream with css selectors
 
+[![build status](https://secure.travis-ci.org/substack/html-select.png)](http://travis-ci.org/substack/html-select)
+
 # example
 
 ``` js
