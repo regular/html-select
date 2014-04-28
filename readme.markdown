@@ -1,6 +1,6 @@
 # html-select
 
-match css selectors into an html tokenize stream
+match a tokenized html stream with css selectors
 
 # example
 
