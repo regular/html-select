@@ -4,7 +4,7 @@ var fs = require('fs');
 
 fs.createReadStream(__dirname + '/page.html')
     .pipe(tokenize())
-    .pipe(select('span.greeting', function (e) {
+    .pipe(select('.content span', function (e) {
         console.log('matched:', e);
     }))
 ;
