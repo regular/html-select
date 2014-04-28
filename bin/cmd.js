@@ -3,8 +3,18 @@
 var select = require('../');
 var split = require('split');
 var fs = require('fs');
+var minimist = require('minimist');
 
-var selector = process.argv.slice(2).join(' ');
+var argv = minimist(process.argv.slice(2), {
+    alias: { h: 'help' }
+});
+var selector = argv._.join(' ');
+
+if (argv.help) {
+    return fs.createReadStream(__dirname + '/usage.txt')
+        .pipe(process.stdout)
+    ;
+}
 
 process.stdin
     .pipe(split(parseLine))
