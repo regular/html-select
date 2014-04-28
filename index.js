@@ -31,6 +31,7 @@ function Selector (sel, cb) {
 
 Selector.prototype._write = function (row, enc, next) {
     var type = row[0], buf = row[1];
+    if (typeof buf === 'string') buf = Buffer(buf);
     if (type === 'open') {
         var tag = parseTag(buf);
         this._push(tag);
@@ -44,9 +45,6 @@ Selector.prototype._write = function (row, enc, next) {
         this._pop();
     }
     next();
-};
-
-Selector.prototype.match = function (tag) {
 };
 
 Selector.prototype._push = function (tag) {

@@ -1,0 +1,5 @@
+usage: html-select SELECTOR
+
+  Given a newline-separated json stream of html tokenize output on stdin,
+  print matching tags as newline-separated json on stdout.
+
