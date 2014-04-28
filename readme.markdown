@@ -87,7 +87,6 @@ usage: html-select SELECTOR
 
 # todo
 
-* `*`
 * `E > F`
 * `E + F`
 

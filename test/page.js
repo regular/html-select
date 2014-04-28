@@ -13,6 +13,20 @@ test('page .content', function (t) {
     ;
 });
 
+test('page *', function (t) {
+    t.plan(2);
+    var expected = [
+        { name: 'span', attributes: { class: 'greeting' } },
+        { name: 'span', attributes: { class: 'name' } }
+    ];
+    fs.createReadStream(__dirname + '/page/index.html')
+        .pipe(tokenize())
+        .pipe(select('.content *', function (e) {
+            t.deepEqual(e, expected.shift());
+        }))
+    ;
+});
+
 test('page div.content', function (t) {
     t.plan(1);
     fs.createReadStream(__dirname + '/page/index.html')
