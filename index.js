@@ -28,6 +28,7 @@ function Selector (sel, cb) {
     this.selector = parseSelector(sel);
     this.stack = [];
     this.matches = [];
+    this.streams = [];
 }
 
 Selector.prototype._write = function (row, enc, next) {
@@ -41,7 +42,10 @@ Selector.prototype._write = function (row, enc, next) {
             this._pop();
         }
     }
-    else if (type === 'close') {
+    for (var i = 0; i < this.streams.length; i++) {
+        this.streams[i].push(buf);
+    }
+    if (type === 'close') {
         var tag = parseTag(buf);
         this._pop();
     }
@@ -58,7 +62,8 @@ Selector.prototype._push = function (tag) {
             if (++ m.index === this.selector.length) {
                 m.index --;
                 var t = this._fromTag(tag);
-                this.stack[m.index].streams.push(t);
+                row.streams.push(t);
+                this.streams.push(t);
                 this.cb(t);
             }
             else {
@@ -73,7 +78,8 @@ Selector.prototype._push = function (tag) {
     if (match(this.selector[0], tag)) {
         if (this.selector.length === 1) {
             var t = this._fromTag(tag);
-            this.stack[0].streams.push(t);
+            row.streams.push(t);
+            this.streams.push(t);
             this.cb(t);
         }
         else {
@@ -93,6 +99,11 @@ Selector.prototype._pop = function () {
     for (var i = 0; i < s.matches.length; i++) {
         var ix = this.matches.indexOf(s.matches[i]);
         if (ix >= 0) this.matches.splice(ix, 1);
+    }
+    for (var i = 0; i < s.streams.length; i++) {
+        s.streams[i].push(null);
+        var ix = this.streams.indexOf(s.streams[i]);
+        if (ix >= 0) this.streams.splice(ix, 1);
     }
 };
 
