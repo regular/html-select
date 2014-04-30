@@ -2,9 +2,10 @@ var select = require('../');
 var test = require('tape');
 
 test('quoted attribute', function (t) {
-    t.plan(1);
+    t.plan(2);
     var s = select('input[type="text"]', function (e) {
-        t.deepEqual(e, { name: 'input', attributes: { type: 'text' } });
+        t.equal(e.name, 'input');
+        t.deepEqual(e.attributes, { type: 'text' });
     });
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
@@ -16,9 +17,10 @@ test('quoted attribute', function (t) {
 });
 
 test('bare attribute', function (t) {
-    t.plan(1);
+    t.plan(2);
     var s = select('input[type=text]', function (e) {
-        t.deepEqual(e, { name: 'input', attributes: { type: 'text' } });
+        t.equal(e.name, 'input');
+        t.deepEqual(e.attributes, { type: 'text' });
     });
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
