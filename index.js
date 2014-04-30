@@ -1,5 +1,6 @@
 var inherits = require('inherits');
 var Writable = require('readable-stream').Writable;
+var Readable = require('readable-stream').Readable;
 var parseTag = require('./lib/tag.js');
 var parseSelector = require('./lib/selector.js');
 var match = require('./lib/match.js');
@@ -48,7 +49,7 @@ Selector.prototype._write = function (row, enc, next) {
 };
 
 Selector.prototype._push = function (tag) {
-    var row = { tag: tag, matches: [] };
+    var row = { tag: tag, matches: [], streams: [] };
     
     for (var i = 0; i < this.matches.length; i++) {
         var m = this.matches[i];
@@ -56,7 +57,9 @@ Selector.prototype._push = function (tag) {
         if (match(sel, tag)) {
             if (++ m.index === this.selector.length) {
                 m.index --;
-                this.cb(fromTag(tag));
+                var t = this._fromTag(tag);
+                this.stack[m.index].streams.push(t);
+                this.cb(t);
             }
             else {
                 var mcopy = copy(m);
@@ -69,7 +72,9 @@ Selector.prototype._push = function (tag) {
     
     if (match(this.selector[0], tag)) {
         if (this.selector.length === 1) {
-            this.cb(fromTag(tag));
+            var t = this._fromTag(tag);
+            this.stack[0].streams.push(t);
+            this.cb(t);
         }
         else {
             var m = {
@@ -91,6 +96,15 @@ Selector.prototype._pop = function () {
     }
 };
 
-function fromTag (tag) {
-    return { name: tag.name, attributes: tag.getAttributes() };
+Selector.prototype._fromTag = function (tag) {
+    return new Tag(tag);
+};
+
+inherits(Tag, Readable);
+function Tag (tag) {
+    Readable.call(this);
+    this.name = tag.name;
+    this.attributes = tag.getAttributes();
 }
+
+Tag.prototype._read = function () {};
