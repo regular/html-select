@@ -15,7 +15,8 @@
   },
   "devDependencies": {
     "tape": "~2.12.1",
-    "html-tokenize": "~1.0.0"
+    "html-tokenize": "~1.0.0",
+    "concat-stream": "^1.4.5"
   },
   "scripts": {
     "test": "tape test/*.js"
