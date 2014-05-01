@@ -34,7 +34,7 @@ test('more read stream', function (t) {
     s.write([ 'open', '<body>' ]);
     s.write([ 'open', '<div>' ]);
     s.write([ 'text', 'whoa' ]);
-    s.write([ 'open', '</div>' ]);
+    s.write([ 'close', '</div>' ]);
     s.write([ 'open', '<div>' ]);
     s.write([ 'open', '<b>' ]);
     s.write([ 'text', 'beep boop' ]);
