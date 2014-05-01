@@ -91,6 +91,10 @@ Selector.prototype._push = function (tag) {
                 this.stack[m.startIndex].matches.push(mcopy);
             }
         }
+        else {
+            this.matches.splice(i, 1);
+            i --;
+        }
     }
     
     if (match(this.selector[0], tag)) {
