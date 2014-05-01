@@ -75,6 +75,50 @@ $ echo -e '<html><body><h1>beep boop</h1></body></html>' | html-tokenize
 except the second item in each record will be a Buffer if you get the results
 from [html-tokenize](https://npmjs.org/package/html-tokenize) directly.
 
+## tag.createReadStream(opts)
+
+Additionally to `tag.name` and `tag.attributes`, you can create a readable
+stream with all the contents nested under `tag`.
+
+When `opts.outer` is `true`, the outerHTML content of the currently selected tag
+is included. For example, taking the selector and `opts` from `process.argv`:
+
+``` js
+var select = require('html-select');
+var tokenize = require('html-tokenize');
+var fs = require('fs');
+var minimist = require('minimist');
+
+var argv = minimist(process.argv.slice(2), { boolean: [ 'outer' ] });
+var selector = argv._.join(' ');
+
+process.stdin.pipe(tokenize())
+    .pipe(select(selector, function (e) {
+        e.createReadStream(argv).pipe(process.stdout);
+    }))
+;
+```
+
+Running this program normally gives:
+
+```
+$ node read.js .content < page.html
+
+      <span class="greeting">beep boop</span>
+      <span class="name">robot</div>
+    
+```
+
+but running the program with `opts.outer` as `true` produces:
+
+```
+$ node read.js .content --outer < page.html
+<div class="content">
+      <span class="greeting">beep boop</span>
+      <span class="name">robot</div>
+    </div>
+```
+
 # usage
 
 ```
