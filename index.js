@@ -45,7 +45,14 @@ Selector.prototype._write = function (row, enc, next) {
         }
     }
     for (var i = 0; i < this.streams.length; i++) {
-        this.streams[i].push(buf);
+        var s = this.streams[i];
+        var closing = type === 'close'
+            && s._row.index === this.stack.length - 1
+        ;
+        s._writes ++;
+        if ((s._writes > 1 || s._outer) && (s._outer || !closing)) {
+            s.push(buf);
+        }
     }
     if (type === 'close') {
         var tag = parseTag(buf);
@@ -56,7 +63,12 @@ Selector.prototype._write = function (row, enc, next) {
 
 Selector.prototype._push = function (tag) {
     var self = this;
-    var row = { tag: tag, matches: [], streams: [] };
+    var row = {
+        tag: tag,
+        matches: [],
+        streams: [],
+        index: this.stack.length
+    };
     
     for (var i = 0; i < this.matches.length; i++) {
         var m = this.matches[i];
@@ -66,6 +78,7 @@ Selector.prototype._push = function (tag) {
                 m.index --;
                 var t = this._fromTag(tag);
                 t.on('stream', function (s) {
+                    s._row = row;
                     row.streams.push(s);
                     self.streams.push(s);
                 });
@@ -84,6 +97,7 @@ Selector.prototype._push = function (tag) {
         if (this.selector.length === 1) {
             var t = this._fromTag(tag);
             t.on('stream', function (s) {
+                s._row = row;
                 row.streams.push(s);
                 self.streams.push(s);
             });
