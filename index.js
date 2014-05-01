@@ -1,10 +1,12 @@
 var inherits = require('inherits');
 var Writable = require('readable-stream').Writable;
-var Readable = require('readable-stream').Readable;
-var parseTag = require('./lib/tag.js');
+var EventEmitter = require('events').EventEmitter;
+var copy = require('shallow-copy');
+
+var parseTag = require('./lib/parse_tag.js');
 var parseSelector = require('./lib/selector.js');
 var match = require('./lib/match.js');
-var copy = require('shallow-copy');
+var Tag = require('./lib/tag.js');
 
 var special = (function () {
     var tags = [
@@ -53,6 +55,7 @@ Selector.prototype._write = function (row, enc, next) {
 };
 
 Selector.prototype._push = function (tag) {
+    var self = this;
     var row = { tag: tag, matches: [], streams: [] };
     
     for (var i = 0; i < this.matches.length; i++) {
@@ -62,8 +65,10 @@ Selector.prototype._push = function (tag) {
             if (++ m.index === this.selector.length) {
                 m.index --;
                 var t = this._fromTag(tag);
-                row.streams.push(t);
-                this.streams.push(t);
+                t.on('stream', function (s) {
+                    row.streams.push(s);
+                    self.streams.push(s);
+                });
                 this.cb(t);
             }
             else {
@@ -78,8 +83,10 @@ Selector.prototype._push = function (tag) {
     if (match(this.selector[0], tag)) {
         if (this.selector.length === 1) {
             var t = this._fromTag(tag);
-            row.streams.push(t);
-            this.streams.push(t);
+            t.on('stream', function (s) {
+                row.streams.push(s);
+                self.streams.push(s);
+            });
             this.cb(t);
         }
         else {
@@ -110,12 +117,3 @@ Selector.prototype._pop = function () {
 Selector.prototype._fromTag = function (tag) {
     return new Tag(tag);
 };
-
-inherits(Tag, Readable);
-function Tag (tag) {
-    Readable.call(this);
-    this.name = tag.name;
-    this.attributes = tag.getAttributes();
-}
-
-Tag.prototype._read = function () {};
