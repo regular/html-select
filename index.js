@@ -85,15 +85,19 @@ Selector.prototype._push = function (tag) {
                 this.cb(t);
             }
             else {
+                /*
                 var mcopy = copy(m);
                 mcopy.index --;
                 this.matches.push(mcopy)
                 this.stack[m.startIndex].matches.push(mcopy);
+                */
             }
         }
-        else {
+        else if (m.index < this.stack.length) {
+            /*
             this.matches.splice(i, 1);
             i --;
+            */
         }
     }
     
