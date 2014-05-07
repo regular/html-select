@@ -72,6 +72,9 @@ Selector.prototype._push = function (tag) {
     
     for (var i = 0; i < this.matches.length; i++) {
         var m = this.matches[i];
+        if (m.stopIndex && m.stopIndex < this.stack.length) continue;
+        m.stopIndex = undefined;
+        
         var sel = this.selector[m.index];
         if (sel === '>') {
             sel = this.selector[++m.index];
@@ -93,8 +96,7 @@ Selector.prototype._push = function (tag) {
             }
         }
         else if (prev === '>') {
-            this.matches.splice(i, 1);
-            i--
+            m.stopIndex = this.stack.length;
         }
     }
     
