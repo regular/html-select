@@ -82,22 +82,10 @@ Selector.prototype._push = function (tag) {
                     row.streams.push(s);
                     self.streams.push(s);
                 });
+                
                 this.cb(t);
+                break;
             }
-            else {
-                /*
-                var mcopy = copy(m);
-                mcopy.index --;
-                this.matches.push(mcopy)
-                this.stack[m.startIndex].matches.push(mcopy);
-                */
-            }
-        }
-        else if (m.index < this.stack.length) {
-            /*
-            this.matches.splice(i, 1);
-            i --;
-            */
         }
     }
     
