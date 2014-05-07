@@ -9,9 +9,7 @@ test('child selector', function (t) {
     t.plan(2);
     var s = select('.c > input[type=text]', function (e) {
         t.equal(e.name, 'input');
-        e.createReadStream().pipe(concat(function (body) {
-            t.equal(body.toString('utf8'), 'abc');
-        }));
+        t.equal(e.attributes.value, 'abc');
     });
     readStream('child/index.html').pipe(tokenize()).pipe(s);
 });
