@@ -39,8 +39,8 @@ test('mixed case attribute', function (t) {
     });
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
-    s.write([ 'open', '<input TyPe="submit">' ]);
-    s.write([ 'open', '<input tYpE="text">' ]);
+    s.write([ 'open', '<input type="submit">' ]);
+    s.write([ 'open', '<input tYPe="text">' ]);
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
