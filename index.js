@@ -73,6 +73,11 @@ Selector.prototype._push = function (tag) {
     for (var i = 0; i < this.matches.length; i++) {
         var m = this.matches[i];
         var sel = this.selector[m.index];
+        if (sel === '>') {
+            sel = this.selector[++m.index];
+        }
+        var prev = m.index > 0 && this.selector[m.index-1];
+        
         if (match(sel, tag)) {
             if (++ m.index === this.selector.length) {
                 m.index --;
@@ -86,6 +91,10 @@ Selector.prototype._push = function (tag) {
                 this.cb(t);
                 break;
             }
+        }
+        else if (prev === '>') {
+            this.matches.splice(i, 1);
+            i--
         }
     }
     
