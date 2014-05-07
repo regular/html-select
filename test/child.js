@@ -14,6 +14,17 @@ test('child selector', function (t) {
     readStream('child/index.html').pipe(tokenize()).pipe(s);
 });
 
+test('child selector non-immediate descendant', function (t) {
+    t.plan(2);
+    var s = select('.b > .e', function (e) {
+        t.equal(e.name, 'div');
+        e.createReadStream().pipe(concat(function (body) {
+            t.equal(body.toString('utf8'), 'xyz');
+        }));
+    });
+    readStream('child/index.html').pipe(tokenize()).pipe(s);
+});
+
 test('child no-match selector', function (t) {
     var s = select('.b > input[type=text]', function (e) {
         t.fail('should not have matched');
