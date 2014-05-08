@@ -51,8 +51,10 @@ var select = require('html-select')
 Return a writable stream `w` that expects an object stream of
 [html-tokenize](https://npmjs.org/package/html-tokenize) records as input.
 
-`cb(tag)` fires on the same tick for each `tag` matching the css selector
-`selector`. `tag` looks like:
+`'match'` events are fired for every tag that matches the css `selector`.
+`cb(tag)` sets up a listener for `'match'` events when provided.
+
+`tag` looks like:
 
 ``` js
 { name: 'input', attributes: { type: 'text', 'name': 'user', value: 'beep' } }
@@ -118,6 +120,16 @@ $ node read.js .content --outer < page.html
       <span class="name">robot</div>
     </div>
 ```
+
+# events
+
+## w.on('match', function (tag) {})
+
+When the selector matches, this event fires with the `tag`.
+
+## tag.on('close', function () {})
+
+This event fires when a tag is closed and after any readable streams have ended.
 
 # usage
 
