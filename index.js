@@ -26,11 +26,12 @@ module.exports = Selector;
 function Selector (sel, cb) {
     if (!(this instanceof Selector)) return new Selector(sel, cb);
     Writable.call(this, { objectMode: true });
-    this.cb = cb;
+    
     this.selector = parseSelector(sel);
     this.stack = [];
     this.matches = [];
     this.streams = [];
+    if (cb) this.on('match', cb);
 }
 
 Selector.prototype._write = function (row, enc, next) {
@@ -67,6 +68,7 @@ Selector.prototype._push = function (tag) {
         tag: tag,
         matches: [],
         streams: [],
+        tags: [],
         index: this.stack.length
     };
     
@@ -85,13 +87,14 @@ Selector.prototype._push = function (tag) {
             if (++ m.index === this.selector.length) {
                 m.index --;
                 var t = this._fromTag(tag);
+                row.tags.push(t);
                 t.on('stream', function (s) {
                     s._row = row;
                     row.streams.push(s);
                     self.streams.push(s);
                 });
                 
-                this.cb(t);
+                this.emit('match', t);
                 break;
             }
         }
@@ -103,12 +106,13 @@ Selector.prototype._push = function (tag) {
     if (match(this.selector[0], tag)) {
         if (this.selector.length === 1) {
             var t = this._fromTag(tag);
+            row.tags.push(t);
             t.on('stream', function (s) {
                 s._row = row;
                 row.streams.push(s);
                 self.streams.push(s);
             });
-            this.cb(t);
+            this.emit('match', t);
         }
         else {
             var m = {
@@ -132,6 +136,9 @@ Selector.prototype._pop = function () {
         s.streams[i].push(null);
         var ix = this.streams.indexOf(s.streams[i]);
         if (ix >= 0) this.streams.splice(ix, 1);
+    }
+    for (var i = 0; i < s.tags.length; i++) {
+        s.tags[i]._close();
     }
 };
 
