@@ -7,7 +7,7 @@ test('events', function (t) {
     var s = select('div b');
     s.on('match', function (e) {
         t.equal(e.name, 'b');
-        t.deepEqual(e.attributes, { x: 5 });
+        t.deepEqual(e.attributes, { x: '5' });
         
         e.on('close', function () {
             t.ok(true, 'close event');
