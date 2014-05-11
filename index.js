@@ -127,6 +127,7 @@ Selector.prototype._push = function (tag) {
 };
 
 Selector.prototype._pop = function () {
+    if (this.stack.length === 0) return;
     var s = this.stack.pop();
     for (var i = 0; i < s.matches.length; i++) {
         var ix = this.matches.indexOf(s.matches[i]);
