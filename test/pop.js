@@ -22,3 +22,22 @@ test('more closes than opens', function (t) {
     s.write([ 'close', '</html>' ]);
     s.end();
 });
+
+test('implicit close', function (t) {
+    t.plan(2);
+    var s = select('div b', function (e) {
+        t.equal(e.name, 'b');
+        e.createReadStream().pipe(concat(function (body) {
+            t.equal(body.toString('utf8'), 'beep boop');
+        }));
+    });
+    s.write([ 'open', '<html>' ]);
+    s.write([ 'open', '<body>' ]);
+    s.write([ 'open', '<div>' ]);
+    s.write([ 'open', '<b>' ]);
+    s.write([ 'text', 'beep boop' ]);
+    s.write([ 'close', '</div>' ]);
+    s.write([ 'close', '</body>' ]);
+    s.write([ 'close', '</html>' ]);
+    s.end();
+});
