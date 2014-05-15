@@ -6,7 +6,8 @@ var fs = require('fs');
 var minimist = require('minimist');
 
 var argv = minimist(process.argv.slice(2), {
-    alias: { h: 'help' }
+    alias: { h: 'help', i: 'inside' },
+    boolean: [ 'inside' ]
 });
 var selector = argv._.join(' ');
 
@@ -20,6 +21,9 @@ process.stdin
     .pipe(split(parseLine))
     .pipe(select(selector, function (e) {
         console.log(JSON.stringify(e));
+        if (argv.inside) {
+            e.createReadStream().pipe(process.stdout);
+        }
     }))
 ;
 

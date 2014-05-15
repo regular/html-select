@@ -134,10 +134,14 @@ This event fires when a tag is closed and after any readable streams have ended.
 # usage
 
 ```
-usage: html-select SELECTOR
+usage: html-select SELECTOR OPTIONS
 
   Given a newline-separated json stream of html tokenize output on stdin,
   print matching tags as newline-separated json on stdout.
+
+OPTIONS are:
+
+  -i, --inside   Print the inner html content at matching selectors.
 
 ```
 
