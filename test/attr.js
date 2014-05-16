@@ -1,12 +1,21 @@
 var select = require('../');
 var test = require('tape');
+var through = require('through2');
 
 test('quoted attribute', function (t) {
-    t.plan(2);
-    var s = select('input[type="text"]', function (e) {
-        t.equal(e.name, 'input');
-        t.deepEqual(e.attributes, { type: 'text' });
-    });
+    var expected = [
+        [ 'open', '<input type="text">' ]
+    ];
+    t.plan(expected.length);
+    var s = select();
+    var e = s.select('input[type="text"]');
+    e.createReadStream()
+        .pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
+        }))
+    ;
+    
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
     s.write([ 'open', '<input type="submit">' ]);
@@ -14,6 +23,7 @@ test('quoted attribute', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });
 
 test('bare attribute', function (t) {

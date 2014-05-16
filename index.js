@@ -32,7 +32,7 @@ function Plex (sel, cb) {
         id: function (node) { return getAttr(node, 'id') },
         parent: 'parent',
         children: 'children',
-        attr: function (node) { return getAttr(node) }
+        attr: getAttr
     });
     if (sel && cb) this.select(sel, cb);
 }
@@ -57,7 +57,7 @@ Plex.prototype.select = function (sel, cb) {
     var s = new Select(this._lang(sel), pull);
     s.on('match', function () {
         self._matching = s;
-        cb(s);
+        if (cb) cb(s);
         s.output.pipe(through.obj(function (row, enc, next) {
             self.push(row);
             next();
