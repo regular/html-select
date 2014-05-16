@@ -55,7 +55,6 @@ Plex.prototype.select = function (sel, cb) {
     var pull = function () { self._advance() };
     var s = new Select(this._lang(sel), pull);
     s.on('match', function () {
-console.log('BEGIN'); 
         self._matching = s;
         cb(s);
         s.output.pipe(through.obj(function (row, enc, next) {
@@ -63,12 +62,9 @@ console.log('BEGIN');
             next();
         }));
         s.output.on('end', function () {
-console.log('END'); 
             self._matching = null;
+            self._advance();
         });
-    });
-    s.on('unmatch', function () {
-        //self._matching = null;
     });
     this._selectors.push(s);
     return s;
@@ -89,7 +85,7 @@ Plex.prototype._pull = function (cb) {
 };
 
 Plex.prototype._read = function (n) {
-    if (!this.matching) this._advance();
+    if (!this._matching) this._advance();
 };
 
 Plex.prototype._advance = function () {
