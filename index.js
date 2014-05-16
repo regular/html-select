@@ -9,8 +9,8 @@ var parseTag = require('./lib/parse_tag.js');
 module.exports = Plex;
 inherits(Plex, Duplex);
 
-function Plex (opts) {
-    if (!(this instanceof Plex)) return new Plex(opts);
+function Plex (sel, cb) {
+    if (!(this instanceof Plex)) return new Plex(sel, cb);
     Duplex.call(this, { objectMode: true });
     this._selectors = [];
     this._matching = null;
@@ -34,6 +34,7 @@ function Plex (opts) {
         children: 'children',
         attr: function (node) { return getAttr(node) }
     });
+    if (sel && cb) this.select(sel, cb);
 }
     
 function getAttr (node, key) {
