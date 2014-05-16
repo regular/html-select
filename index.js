@@ -1,148 +1,133 @@
+var through = require('through2');
 var inherits = require('inherits');
-var Writable = require('readable-stream').Writable;
-var EventEmitter = require('events').EventEmitter;
-var copy = require('shallow-copy');
+var Duplex = require('readable-stream').Duplex;
+var cssauron = require('cssauron');
 
+var Select = require('./lib/select.js');
 var parseTag = require('./lib/parse_tag.js');
-var parseSelector = require('./lib/selector.js');
-var match = require('./lib/match.js');
-var Tag = require('./lib/tag.js');
 
-var special = (function () {
-    var tags = [
-        'area', 'base', 'basefont', 'br', 'col', 'hr', 'input',
-        'img', 'link', 'meta'
-    ];
-    var special = {};
-    for (var i = 0; i < tags.length; i++) {
-        special[tags[i]] = true;
-    }
-    return special;
-})();
+module.exports = Plex;
+inherits(Plex, Duplex);
 
-inherits(Selector, Writable);
-module.exports = Selector;
-
-function Selector (sel, cb) {
-    if (!(this instanceof Selector)) return new Selector(sel, cb);
-    Writable.call(this, { objectMode: true });
+function Plex (opts) {
+    if (!(this instanceof Plex)) return new Plex(opts);
+    Duplex.call(this, { objectMode: true });
+    this._selectors = [];
+    this._matching = null;
+    this._pullQueue = [];
     
-    this.selector = parseSelector(sel);
-    this.stack = [];
-    this.matches = [];
-    this.streams = [];
-    if (cb) this.on('match', cb);
+    this._root = {};
+    this._current = this._root;
+    
+    this._lang = cssauron({
+        tag: function (node) {
+            if (node.tag) return node.tag;
+            if (!node.row) return undefined;
+            var p = parseTag(node.row[1]);
+            node._parsed = p;
+            node.tag = p.name;
+            return node.tag;
+        },
+        class: function (node) { return getAttr(node, 'class') },
+        id: function (node) { return getAttr(node, 'id') },
+        parent: 'parent',
+        children: 'children',
+        attr: function (node) { return getAttr(node) }
+    });
+}
+    
+function getAttr (node, key) {
+    if (node.attributes && !key) return node.attributes;
+    else if (node.attributes) return node.attributes[key];
+    if (!node._parsed) {
+        if (!node.row) return undefined;
+        var p = parseTag(node.row[1]);
+        node._parsed = p;
+        node.tag = p.tag;
+    }
+    node.attributes = node._parsed.getAttributes();
+    if (!key) return node.attributes;
+    else return node.attributes[key];
 }
 
-Selector.prototype._write = function (row, enc, next) {
-    var type = row[0], buf = row[1];
-    if (typeof buf === 'string') buf = Buffer(buf);
-    if (type === 'open') {
-        var tag = parseTag(buf);
-        this._push(tag);
-        
-        if (special.hasOwnProperty(tag.name)) {
-            this._pop();
-        }
-    }
-    for (var i = 0; i < this.streams.length; i++) {
-        var s = this.streams[i];
-        var closing = type === 'close'
-            && s._row.index === this.stack.length - 1
-        ;
-        s._writes ++;
-        if ((s._writes > 1 || s._outer) && (s._outer || !closing)) {
-            s.push(buf);
-        }
-    }
-    if (type === 'close') {
-        var tag = parseTag(buf);
-        this._pop();
-    }
-    next();
-};
-
-Selector.prototype._push = function (tag) {
+Plex.prototype.select = function (sel, cb) {
     var self = this;
-    var row = {
-        tag: tag,
-        matches: [],
-        streams: [],
-        tags: [],
-        index: this.stack.length
-    };
-    
-    for (var i = 0; i < this.matches.length; i++) {
-        var m = this.matches[i];
-        if (m.stopIndex && m.stopIndex < this.stack.length) continue;
-        m.stopIndex = undefined;
-        
-        var sel = this.selector[m.index];
-        if (sel === '>') {
-            sel = this.selector[++m.index];
-        }
-        var prev = m.index > 0 && this.selector[m.index-1];
-        
-        if (match(sel, tag)) {
-            if (++ m.index === this.selector.length) {
-                m.index --;
-                var t = this._fromTag(tag);
-                row.tags.push(t);
-                t.on('stream', function (s) {
-                    s._row = row;
-                    row.streams.push(s);
-                    self.streams.push(s);
-                });
-                
-                this.emit('match', t);
-                break;
-            }
-        }
-        else if (prev === '>') {
-            m.stopIndex = this.stack.length;
-        }
-    }
-    
-    if (match(this.selector[0], tag)) {
-        if (this.selector.length === 1) {
-            var t = this._fromTag(tag);
-            row.tags.push(t);
-            t.on('stream', function (s) {
-                s._row = row;
-                row.streams.push(s);
-                self.streams.push(s);
-            });
-            this.emit('match', t);
-        }
-        else {
-            var m = {
-                index: 1,
-                startIndex: this.stack.length
-            };
-            this.matches.push(m);
-            row.matches.push(m);
-        }
-    }
-    this.stack.push(row);
+    var pull = function () { self._advance() };
+    var s = new Select(this._lang(sel), pull);
+    s.on('match', function () {
+console.log('BEGIN'); 
+        self._matching = s;
+        cb(s);
+        s.output.pipe(through.obj(function (row, enc, next) {
+            self.push(row);
+            next();
+        }));
+        s.output.on('end', function () {
+console.log('END'); 
+            self._matching = null;
+        });
+    });
+    s.on('unmatch', function () {
+        //self._matching = null;
+    });
+    this._selectors.push(s);
+    return s;
 };
 
-Selector.prototype._pop = function () {
-    if (this.stack.length === 0) return;
-    var s = this.stack.pop();
-    for (var i = 0; i < s.matches.length; i++) {
-        var ix = this.matches.indexOf(s.matches[i]);
-        if (ix >= 0) this.matches.splice(ix, 1);
+Plex.prototype._pull = function (cb) {
+    var buf = this._buffer;
+    var next = this._next;
+    if (buf) {
+        this._buffer = null;
+        this._next = null;
+        cb(buf);
+        next();
     }
-    for (var i = 0; i < s.streams.length; i++) {
-        s.streams[i].push(null);
-        var ix = this.streams.indexOf(s.streams[i]);
-        if (ix >= 0) this.streams.splice(ix, 1);
-    }
-    for (var i = 0; i < s.tags.length; i++) {
-        s.tags[i]._close();
+    else {
+        this._pullQueue.push(cb);
     }
 };
 
-Selector.prototype._fromTag = function (tag) {
-    return new Tag(tag);
+Plex.prototype._read = function (n) {
+    if (!this.matching) this._advance();
+};
+
+Plex.prototype._advance = function () {
+    var self = this;
+    this._pull(function (row) {
+        self._updateTree(row);
+        
+        for (var i = 0, l = self._selectors.length; i < l; i++) {
+            self._selectors[i]._exec(self._current, row);
+        }
+        
+        if (!self._matching) self.push(row);
+    });
+};
+
+Plex.prototype._updateTree = function (row) {
+    if (row[0] === 'open') {
+        var node = { parent: this._current, row: row };
+        if (!this._current.children) this._current.children = [ node ]
+        else this._current.children.push(node);
+        this._current = node;
+    }
+    else if (row[0] === 'close') {
+        if (this._current.parent) this._current = this._current.parent;
+    }
+};
+
+Plex.prototype._write = function (buf, enc, next) {
+    if (this._pullQueue.length) {
+        this._pullQueue.shift()(buf);
+        next();
+    }
+    else {
+        this._buffer = buf;
+        this._next = next;
+    }
+};
+
+Plex.prototype._err = function (msg) {
+    this.emit('error', new Error(msg));
 };
