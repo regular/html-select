@@ -2,9 +2,10 @@ var select = require('../');
 var test = require('tape');
 var tokenize = require('html-tokenize');
 var concat = require('concat-stream');
+var through = require('through2');
 var fs = require('fs');
 
-var names = [
+var expected = [
     'echojs',
     'echojs',
     'efcl',
@@ -33,26 +34,25 @@ var names = [
     '紫云飞',
     'echojs',
     'echojs',
+    'echojs',
     'echojs'
 ];
 
-var expected = [];
-for (var i = 0; i < names.length; i++) {
-    expected.push(names[i]);
-    expected.push('discuss');
-}
-expected.push('echojs');
-expected.push('1 comment');
-
 test('article', function (t) {
-    t.plan(expected.length * 2);
+    t.plan(expected.length);
     fs.createReadStream(__dirname + '/article/index.html')
         .pipe(tokenize())
-        .pipe(select('article username a[href]', function (e) {
-            t.equal(e.name, 'a');
-            e.createReadStream().pipe(concat(function (body) {
-                t.equal(body.toString(), expected.shift(), body+'');
-            }));
+        .pipe(select('article username a[href]', function (sel) {
+            sel.createReadStream()
+                .pipe(through.obj(function (row, enc, next) {
+                    if (row[0] === 'text') this.push(row[1]);
+                    next();
+                }))
+                .pipe(concat(function (body) {
+                    t.equal(body.toString(), expected.shift(), body+'');
+                }))
+            ;
         }))
+        .resume()
     ;
 });
