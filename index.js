@@ -96,7 +96,6 @@ Plex.prototype._advance = function () {
         for (var i = 0, l = self._selectors.length; i < l; i++) {
             self._selectors[i]._exec(self._current, row);
         }
-        
         if (!self._matching) self.push(row);
     });
 };

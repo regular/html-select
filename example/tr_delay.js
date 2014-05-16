@@ -10,11 +10,11 @@ p.select('li', function (s) {
             setTimeout(function () {
                 self.push([ row[0], String(row[1]).toUpperCase() ]);
                 next();
-            }, 500);
+            }, 200);
         },
         function (next) {
             var self = this;
-            setTimeout(function () { self.push(null) }, 500);
+            setTimeout(function () { self.push(null) }, 200);
         }
     );
     tr.pipe(s.createStream()).pipe(tr);
