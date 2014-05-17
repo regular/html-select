@@ -102,7 +102,7 @@ Plex.prototype._advance = function () {
             self._selectors[i]._exec(self._current, row);
         }
         
-        if (self._current.parent && selfClosing(getTag(self._current))) {
+        if (self._current.selfClosing) {
             self._current = self._current.parent;
         }
         if (!self._matching) self.push(row);
@@ -112,6 +112,7 @@ Plex.prototype._advance = function () {
 Plex.prototype._updateTree = function (row) {
     if (row[0] === 'open') {
         var node = { parent: this._current, row: row };
+        node.selfClosing = node.parent && selfClosing(getTag(node));
         if (!this._current.children) this._current.children = [ node ]
         else this._current.children.push(node);
         this._current = node;
