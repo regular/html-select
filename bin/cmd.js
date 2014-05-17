@@ -2,12 +2,13 @@
 
 var select = require('../');
 var split = require('split');
+var through = require('through2');
 var fs = require('fs');
 var minimist = require('minimist');
 
 var argv = minimist(process.argv.slice(2), {
-    alias: { h: 'help', i: 'inside' },
-    boolean: [ 'inside' ]
+    alias: { h: 'help', r: 'raw' },
+    boolean: [ 'raw' ]
 });
 var selector = argv._.join(' ');
 
@@ -17,15 +18,21 @@ if (argv.help) {
     ;
 }
 
-process.stdin
-    .pipe(split(parseLine))
-    .pipe(select(selector, function (e) {
-        console.log(JSON.stringify(e));
-        if (argv.inside) {
-            e.createReadStream().pipe(process.stdout);
+var s = select();
+s.select(selector, function (e) {
+    e.createReadStream().pipe(through.obj(function (row, enc, next) {
+        if (argv.raw) {
+            console.log(row[1].toString());
         }
-    }))
-;
+        else {
+            console.log(JSON.stringify([ row[0], row[1].toString() ]));
+        }
+        next();
+    }));
+});
+
+process.stdin.pipe(split(parseLine)).pipe(s);
+s.resume();
 
 function parseLine (s) {
     if (!/\S/.test(s)) return;
