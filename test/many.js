@@ -3,22 +3,40 @@ var test = require('tape');
 var through = require('through2');
 
 test('many read streams', function (t) {
-    var expected = [
-        [ 'open', '<b>' ],
-        [ 'text', 'beep boop' ],
-        [ 'close', '</b>' ],
-        [ 'open', '<b x=555>' ],
-        [ 'text', 'eek' ],
-        [ 'close', '</b>' ]
-    ];
-    t.plan(expected.length + 2);
-    var s = select().select('div b', function (e) {
+    var expected = {
+        b: [
+            [ 'open', '<b>' ],
+            [ 'text', 'beep boop' ],
+            [ 'close', '</b>' ],
+            [ 'open', '<b x=555>' ],
+            [ 'text', 'eek' ],
+            [ 'close', '</b>' ]
+        ],
+        h1: [
+            [ 'open', '<h1>' ],
+            [ 'text', 'whatever' ],
+            [ 'close', '</h1>' ],
+        ],
+    };
+    t.plan(expected.b.length + expected.h1.length + 3);
+    
+    var s = select();
+    s.select('div b', function (e) {
         e.on('close', function () { t.ok(true, 'closed') });
         e.createReadStream().pipe(through.obj(function (row, enc, next) {
-            t.deepEqual(row, expected.shift());
+            t.deepEqual(row, expected.b.shift());
             next();
         }));
     });
+    
+    s.select('h1', function (e) {
+        e.on('close', function () { t.ok(true, 'closed') });
+        e.createReadStream().pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.h1.shift());
+            next();
+        }));
+    });
+    
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
     s.write([ 'open', '<div>' ]);
