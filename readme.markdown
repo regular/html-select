@@ -112,7 +112,7 @@ gives this output:
 Using the same html file from the previous example,
 this script converts everything inside `dt` elements to uppercase:
 
-```
+``` js
 var select = require('html-select');
 var tokenize = require('html-tokenize');
 var through = require('through2');
