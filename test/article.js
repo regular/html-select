@@ -40,19 +40,17 @@ var expected = [
 
 test('article', function (t) {
     t.plan(expected.length);
+    var s = select();
+    s.select('article username a[href]', function (e) {
+        e.createReadStream().pipe(through.obj(function (row, enc, next) {
+            if (row[0] === 'text') {
+                t.equal(row[1].toString('utf8'), expected.shift());
+            }
+            next();
+        }));
+    });
     fs.createReadStream(__dirname + '/article/index.html')
-        .pipe(tokenize())
-        .pipe(select('article username a[href]', function (sel) {
-            sel.createReadStream()
-                .pipe(through.obj(function (row, enc, next) {
-                    if (row[0] === 'text') this.push(row[1]);
-                    next();
-                }))
-                .pipe(concat(function (body) {
-                    t.equal(body.toString(), expected.shift(), body+'');
-                }))
-            ;
-        }))
-        .resume()
+        .pipe(tokenize()).pipe(s)
     ;
+    s.resume();
 });
