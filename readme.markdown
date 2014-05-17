@@ -235,11 +235,12 @@ When a matched element is closed for reading and writing, this event fires.
 usage: html-select SELECTOR OPTIONS
 
   Given a newline-separated json stream of html tokenize output on stdin,
-  print matching tags as newline-separated json on stdout.
+  print content below matching html tokens as json on stdout.
 
 OPTIONS are:
 
-  -i, --inside   Print the inner html content at matching selectors.
+  -r, --raw   Instead of printing html token data as json, print the html
+              directly.
 
 ```
 
