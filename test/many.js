@@ -1,19 +1,22 @@
 var select = require('../');
 var test = require('tape');
-var concat = require('concat-stream');
+var through = require('through2');
 
 test('many read streams', function (t) {
     var expected = [
-        { name: 'b', attributes: {}, body: 'beep boop' },
-        { name: 'b', attributes: { x: '555' }, body: 'eek' },
+        [ 'open', '<b>' ],
+        [ 'text', 'beep boop' ],
+        [ 'close', '</b>' ],
+        [ 'open', '<b x=555>' ],
+        [ 'text', 'eek' ],
+        [ 'close', '</b>' ]
     ];
-    t.plan(6);
-    var s = select('div b', function (e) {
-        var x = expected.shift();
-        t.equal(e.name, x.name);
-        t.deepEqual(e.attributes, x.attributes);
-        e.createReadStream().pipe(concat(function (body) {
-            t.equal(body.toString('utf8'), x.body);
+    t.plan(expected.length + 2);
+    var s = select().select('div b', function (e) {
+        e.on('close', function () { t.ok(true, 'closed') });
+        e.createReadStream().pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
         }));
     });
     s.write([ 'open', '<html>' ]);
@@ -40,4 +43,5 @@ test('many read streams', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });
