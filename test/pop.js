@@ -1,13 +1,18 @@
 var select = require('../');
 var test = require('tape');
-var concat = require('concat-stream');
+var through = require('through2');
 
 test('more closes than opens', function (t) {
-    t.plan(2);
+    var expected = [
+        [ 'open', '<b>' ],
+        [ 'text', 'beep boop' ],
+        [ 'close', '</b>' ]
+    ];
+    t.plan(expected.length);
     var s = select('div b', function (e) {
-        t.equal(e.name, 'b');
-        e.createReadStream().pipe(concat(function (body) {
-            t.equal(body.toString('utf8'), 'beep boop');
+        e.createReadStream().pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
         }));
     });
     s.write([ 'open', '<html>' ]);
@@ -21,14 +26,19 @@ test('more closes than opens', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });
 
 test('implicit close', function (t) {
-    t.plan(2);
+    var expected = [
+        [ 'open', '<b>' ],
+        [ 'text', 'beep boop' ]
+    ];
+    t.plan(expected.length);
     var s = select('div b', function (e) {
-        t.equal(e.name, 'b');
-        e.createReadStream().pipe(concat(function (body) {
-            t.equal(body.toString('utf8'), 'beep boop');
+        e.createReadStream().pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
         }));
     });
     s.write([ 'open', '<html>' ]);
@@ -40,17 +50,21 @@ test('implicit close', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });
 
 test('implicit close outer content', function (t) {
-    t.end();
-    return console.error('SKIPPING');
-    
-    t.plan(2);
+    var expected = [
+        [ 'open', '<div>' ],
+        [ 'open', '<b>' ],
+        [ 'text', 'beep boop' ],
+        [ 'close', '</div>' ]
+    ];
+    t.plan(expected.length);
     var s = select('div', function (e) {
-        t.equal(e.name, 'div');
-        e.createReadStream().pipe(concat(function (body) {
-            t.equal(body.toString('utf8'), '<b>beep boop');
+        e.createReadStream().pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
         }));
     });
     s.write([ 'open', '<html>' ]);
@@ -62,4 +76,5 @@ test('implicit close outer content', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });
