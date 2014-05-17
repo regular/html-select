@@ -1,26 +1,22 @@
-var plex = require('../');
-var split = require('split');
+var select = require('../');
+var tokenize = require('html-tokenize');
 var through = require('through2');
+var fs = require('fs');
 
-var p = plex();
-p.select('li', function (s) {
+var s = select('dt', function (e) {
     var tr = through.obj(function (row, buf, next) {
         this.push([ row[0], String(row[1]).toUpperCase() ]);
         next();
     });
-    tr.pipe(s.createStream()).pipe(tr);
+    tr.pipe(e.createStream()).pipe(tr);
 });
 
-process.stdin
-    .pipe(split(parse))
-    .pipe(p)
-    .pipe(through.obj(function (row, enc, next) {
-        this.push(JSON.stringify(row) + '\n');
+fs.createReadStream(__dirname + '/page.html')
+    .pipe(tokenize())
+    .pipe(s)
+    .pipe(through.obj(function (row, buf, next) {
+        this.push(row[1]);
         next();
     }))
-    .pipe(process.stderr)
+    .pipe(process.stdout)
 ;
-
-function parse (buf) {
-    if (buf.length) return JSON.parse(buf.toString('utf8'));
-}
