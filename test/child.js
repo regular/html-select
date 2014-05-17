@@ -19,7 +19,11 @@ test('child selector', function (t) {
 });
 
 test('child selector non-immediate descendant', function (t) {
-    var expected = [ [ 'open', Buffer('<div class="e">xyz</div>') ] ];
+    var expected = [
+        [ 'open', Buffer('<div class="e">') ],
+        [ 'text', Buffer('xyz') ],
+        [ 'close', Buffer('</div>') ]
+    ];
     t.plan(expected.length);
     var s = select();
     var e = s.select('.b > .e');
@@ -32,19 +36,23 @@ test('child selector non-immediate descendant', function (t) {
 });
 
 test('child no-match selector', function (t) {
-    var s = select('.b > input[type=text]', function (e) {
+    var s = select();
+    s.select('.b > input[type=text]', function (e) {
         t.fail('should not have matched');
     });
     readStream('child/index.html').pipe(tokenize()).pipe(s);
     s.on('finish', function () { t.end() });
+    s.resume();
 });
 
 test('child start then no match selector', function (t) {
-    var s = select('.b > .d', function (e) {
+    var s = select();
+    s.select('.b > .d', function (e) {
         t.fail('should not have matched');
     });
     readStream('child/index.html').pipe(tokenize()).pipe(s);
     s.on('finish', function () { t.end() });
+    s.resume();
 });
 
 function readStream (file) {
