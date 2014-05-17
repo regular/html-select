@@ -7,17 +7,17 @@
     "html-select": "bin/cmd.js"
   },
   "dependencies": {
-    "shallow-copy": "~0.0.1",
-    "inherits": "~2.0.1",
-    "readable-stream": "~1.0.27-1",
+    "inherits": "^2.0.1",
+    "through2": "^1.0.0",
+    "cssauron": "^1.1.0",
+    "readable-stream": "^1.0.27-1",
+    "duplexer2": "~0.0.2",
     "minimist": "~0.0.8",
-    "split": "~0.3.0",
-    "object-inspect": "~0.4.0"
+    "split": "~0.3.0"
   },
   "devDependencies": {
     "tape": "^2.13.0",
-    "html-tokenize": "~1.0.0",
-    "concat-stream": "^1.4.5"
+    "html-tokenize": "^1.0.0"
   },
   "scripts": {
     "test": "tape test/*.js"

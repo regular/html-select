@@ -1,7 +1,6 @@
 var select = require('../');
 var test = require('tape');
 var tokenize = require('html-tokenize');
-var concat = require('concat-stream');
 var through = require('through2');
 var fs = require('fs');
 
