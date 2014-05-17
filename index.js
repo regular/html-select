@@ -98,10 +98,9 @@ Plex.prototype._read = function (n) {
 Plex.prototype._advance = function () {
     var self = this;
     this._pull(function (row) {
-        self._updateTree(row);
-        
+        var p = self._updateTree(row);
         for (var i = 0, l = self._selectors.length; i < l; i++) {
-            self._selectors[i]._exec(self._current, row);
+            self._selectors[i]._exec(self._current, row, p);
         }
         
         if (self._current.selfClosing) {
@@ -121,6 +120,7 @@ Plex.prototype._updateTree = function (row) {
     }
     else if (row[0] === 'close') {
         if (this._current.parent) this._current = this._current.parent;
+        return parseTag(row[1]);
     }
 };
 

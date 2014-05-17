@@ -2,7 +2,6 @@ var select = require('../');
 var test = require('tape');
 var through = require('through2');
 
-/*
 test('more closes than opens', function (t) {
     var expected = [
         [ 'open', '<b>' ],
@@ -29,7 +28,6 @@ test('more closes than opens', function (t) {
     s.end();
     s.resume();
 });
-*/
 
 test('implicit close', function (t) {
     var expected = [
@@ -54,7 +52,7 @@ test('implicit close', function (t) {
     s.end();
     s.resume();
 });
-return;
+
 test('implicit close outer content', function (t) {
     var expected = [
         [ 'open', '<div>' ],
