@@ -78,3 +78,32 @@ test('implicit close outer content', function (t) {
     s.end();
     s.resume();
 });
+
+test('implicit closing and resuming', function (t) {
+    var expected = [
+        [ 'open', '<i>' ],
+        [ 'text', 'pizza' ],
+        [ 'close', '</i>' ]
+    ];
+    t.plan(expected.length);
+    var s = select('div > i', function (e) {
+        e.createReadStream().pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
+        }));
+    });
+    s.write([ 'open', '<html>' ]);
+    s.write([ 'open', '<body>' ]);
+    s.write([ 'open', '<div>' ]);
+    s.write([ 'open', '<span>' ]);
+    s.write([ 'open', '<b>' ]);
+    s.write([ 'text', 'beep boop' ]);
+    s.write([ 'close', '</span>' ]);
+    s.write([ 'open', '<i>' ]);
+    s.write([ 'text', 'pizza' ]);
+    s.write([ 'close', '</i>' ]);
+    s.write([ 'close', '</body>' ]);
+    s.write([ 'close', '</html>' ]);
+    s.end();
+    s.resume();
+});
