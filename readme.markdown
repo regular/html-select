@@ -1,43 +1,188 @@
 # html-select
 
-match a tokenized html stream with css selectors
+match and splice a tokenized html stream with css selectors
 
 [![build status](https://secure.travis-ci.org/substack/html-select.png)](http://travis-ci.org/substack/html-select)
 
 # example
+
+## readable stream
+
+Given a tokenized stream from
+[html-tokenize](https://npmjs.org/package/html-tokenize), this program will
+print the dt tags matching the selector `'ul > li dt'`:
 
 ``` js
 var select = require('html-select');
 var tokenize = require('html-tokenize');
 var fs = require('fs');
 
-fs.createReadStream(__dirname + '/page.html')
-    .pipe(tokenize())
-    .pipe(select('.content span', function (e) {
-        console.log('matched:', e);
-    }))
-;
+var s = select('ul > li dt', function (e) {
+    console.log('*** MATCH ***');
+    e.createReadStream().on('data', function (row) {
+        console.log([ row[0], row[1].toString() ]);
+    });
+});
+fs.createReadStream(__dirname + '/page.html').pipe(tokenize()).pipe(s);
+s.resume();
 ```
 
-with this html input:
+The `s.resume()` is necesary to put the stream into flow mode since we aren't
+doing anything with the output of `s`.
 
-```
+Now this html input:
+
+``` html
 <html>
+  <head>
+    <title>presentation examples</title>
+  </head>
   <body>
-    <h1>whoa</h1>
-    <div class="content">
-      <span class="greeting">beep boop</span>
-      <span class="name">robot</div>
-    </div>
+    <h1>hello there!</h1>
+    <p>
+      This presentation contains these examples:
+    </p>
+    
+    <ul>
+      <li>
+        <dt>browserify</dt>
+        <dd>node-style <code>require()</code> in the browser</dd>
+      </li>
+      
+      <li>
+        <dt>streams</dt>
+        <dd>shuffle data around with backpressure</dd>
+      </li>
+      
+      <li>
+        <dt>ndarray</dt>
+        <dd>n-dimensional matricies on top of typed arrays</dd>
+      </li>
+      
+      <li>
+        <dt>music</dt>
+        <dd>make music with code</dd>
+      </li>
+      
+      <li>
+        <dt>voxeljs</dt>
+        <dd>make minecraft-style games in webgl</dd>
+      </li>
+      
+      <li>
+        <dt>trumpet</dt>
+        <dd>transform html with css selectors and streams</dd>
+      </li>
+    </ul>
   </body>
 </html>
 ```
 
-produces this output:
+gives this output:
 
 ```
-matched: { name: 'span', attributes: { class: 'greeting' } }
-matched: { name: 'span', attributes: { class: 'name' } }
+*** MATCH ***
+[ 'open', '<dt>' ]
+[ 'text', 'browserify' ]
+[ 'close', '</dt>' ]
+*** MATCH ***
+[ 'open', '<dt>' ]
+[ 'text', 'streams' ]
+[ 'close', '</dt>' ]
+*** MATCH ***
+[ 'open', '<dt>' ]
+[ 'text', 'ndarray' ]
+[ 'close', '</dt>' ]
+*** MATCH ***
+[ 'open', '<dt>' ]
+[ 'text', 'music' ]
+[ 'close', '</dt>' ]
+*** MATCH ***
+[ 'open', '<dt>' ]
+[ 'text', 'voxeljs' ]
+[ 'close', '</dt>' ]
+*** MATCH ***
+[ 'open', '<dt>' ]
+[ 'text', 'trumpet' ]
+[ 'close', '</dt>' ]
+```
+
+## transform
+
+Using the same html file from the previous example,
+this script converts everything inside `dt` elements to uppercase:
+
+```
+var select = require('html-select');
+var tokenize = require('html-tokenize');
+var through = require('through2');
+var fs = require('fs');
+
+var s = select('dt', function (e) {
+    var tr = through.obj(function (row, buf, next) {
+        this.push([ row[0], String(row[1]).toUpperCase() ]);
+        next();
+    });
+    tr.pipe(e.createStream()).pipe(tr);
+});
+
+fs.createReadStream(__dirname + '/page.html')
+    .pipe(tokenize())
+    .pipe(s)
+    .pipe(through.obj(function (row, buf, next) {
+        this.push(row[1]);
+        next();
+    }))
+    .pipe(process.stdout)
+;
+```
+
+Running the transform program yields this html output:
+
+``` html
+<html>
+  <head>
+    <title>presentation examples</title>
+  </head>
+  <body>
+    <h1>hello there!</h1>
+    <p>
+      This presentation contains these examples:
+    </p>
+    
+    <ul>
+      <li>
+        <DT>BROWSERIFY</DT>
+        <dd>node-style <code>require()</code> in the browser</dd>
+      </li>
+      
+      <li>
+        <DT>STREAMS</DT>
+        <dd>shuffle data around with backpressure</dd>
+      </li>
+      
+      <li>
+        <DT>NDARRAY</DT>
+        <dd>n-dimensional matricies on top of typed arrays</dd>
+      </li>
+      
+      <li>
+        <DT>MUSIC</DT>
+        <dd>make music with code</dd>
+      </li>
+      
+      <li>
+        <DT>VOXELJS</DT>
+        <dd>make minecraft-style games in webgl</dd>
+      </li>
+      
+      <li>
+        <DT>TRUMPET</DT>
+        <dd>transform html with css selectors and streams</dd>
+      </li>
+    </ul>
+  </body>
+</html>
 ```
 
 # methods
@@ -46,90 +191,43 @@ matched: { name: 'span', attributes: { class: 'name' } }
 var select = require('html-select')
 ```
 
-## var w = select(selector, cb)
+## var sel = select(selector, cb)
 
-Return a writable stream `w` that expects an object stream of
-[html-tokenize](https://npmjs.org/package/html-tokenize) records as input.
+Create a new html selector transform stream `sel`.
 
-`'match'` events are fired for every tag that matches the css `selector`.
-`cb(tag)` sets up a listener for `'match'` events when provided.
+`sel` expects [tokenized html objects](https://npmjs.org/package/html-tokenize)
+as input and writes tokenized html objects as output.
 
-`tag` looks like:
+If `selector` and `cb` are given, `sel.select(selector, cb)` is called
+automatically.
 
-``` js
-{ name: 'input', attributes: { type: 'text', 'name': 'user', value: 'beep' } }
-```
+## sel.select(selector, cb)
 
-The records are of the form:
+Register a callback `cb(elem)` to fire whenever the css `selector` string
+matches.
 
-```
-$ echo -e '<html><body><h1>beep boop</h1></body></html>' | html-tokenize 
-["open","<html>"]
-["open","<body>"]
-["open","<h1>"]
-["text","beep boop"]
-["close","</h1>"]
-["close","</body>"]
-["close","</html>"]
-["text","\n"]
-```
+## elem.createReadStream()
 
-except the second item in each record will be a Buffer if you get the results
-from [html-tokenize](https://npmjs.org/package/html-tokenize) directly.
+Create a readable object mode stream at the selector. The readable stream
+contains all the matching tokenized html objects including the element that
+matched and its closing tag.
 
-## tag.createReadStream(opts)
+## elem.createWriteStream()
 
-Additionally to `tag.name` and `tag.attributes`, you can create a readable
-stream with all the contents nested under `tag`.
+Create a writable object mode stream at the selector. The writable stream writes
+into the document stream at the selector, replacing the existing content.
 
-When `opts.outer` is `true`, the outerHTML content of the currently selected tag
-is included. For example, taking the selector and `opts` from `process.argv`:
+## elem.createStream()
 
-``` js
-var select = require('html-select');
-var tokenize = require('html-tokenize');
-var fs = require('fs');
-var minimist = require('minimist');
-
-var argv = minimist(process.argv.slice(2), { boolean: [ 'outer' ] });
-var selector = argv._.join(' ');
-
-process.stdin.pipe(tokenize())
-    .pipe(select(selector, function (e) {
-        e.createReadStream(argv).pipe(process.stdout);
-    }))
-;
-```
-
-Running this program normally gives:
-
-```
-$ node read.js .content < page.html
-
-      <span class="greeting">beep boop</span>
-      <span class="name">robot</div>
-    
-```
-
-but running the program with `opts.outer` as `true` produces:
-
-```
-$ node read.js .content --outer < page.html
-<div class="content">
-      <span class="greeting">beep boop</span>
-      <span class="name">robot</div>
-    </div>
-```
+Create a duplex object mode stream at the selector. The writable side will write
+into the document stream  at the selector, replacing the existing content. The
+readable side contains the existing content.
 
 # events
 
-## w.on('match', function (tag) {})
+## elem.on('close', function () {})
 
-When the selector matches, this event fires with the `tag`.
-
-## tag.on('close', function () {})
-
-This event fires when a tag is closed and after any readable streams have ended.
+When a matched element is closed for reading and writing, this event fires.
 
 # usage
 
@@ -145,10 +243,9 @@ OPTIONS are:
 
 ```
 
-# todo
+# supported css selectors
 
-* `E > F`
-* `E + F`
+Internally html-select uses [cssauron](https://npmjs.org/package/cssauron).
 
 # install
 
