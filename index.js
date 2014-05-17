@@ -102,7 +102,6 @@ Plex.prototype._advance = function () {
         for (var i = 0, l = self._selectors.length; i < l; i++) {
             self._selectors[i]._exec(self._current, row, p);
         }
-        
         if (self._current.selfClosing) {
             self._current = self._current.parent;
         }
