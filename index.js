@@ -29,6 +29,11 @@ function Plex (sel, cb) {
         attr: getAttr
     });
     
+    this.on('finish', function () {
+        this._finished = true;
+        this._advance();
+    });
+    
     if (sel && cb) this.select(sel, cb);
 }
 
@@ -86,6 +91,9 @@ Plex.prototype._pull = function (cb) {
         cb(buf);
         next();
     }
+    else if (this._finished) {
+        cb(null);
+    }
     else {
         this._pullQueue.push(cb);
     }
@@ -98,6 +106,14 @@ Plex.prototype._read = function (n) {
 Plex.prototype._advance = function () {
     var self = this;
     this._pull(function (row) {
+        if (row === null) {
+            for (var i = 0, l = self._selectors.length; i < l; i++) {
+                var s = self._selectors[i];
+                if (s.input) s.input.end();
+            }
+            return self.push(null);
+        }
+        
         var p = self._updateTree(row);
         for (var i = 0, l = self._selectors.length; i < l; i++) {
             self._selectors[i]._exec(self._current, row, p);
