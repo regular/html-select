@@ -3,9 +3,7 @@ var test = require('tape');
 var through = require('through2');
 
 test('quoted attribute', function (t) {
-    var expected = [
-        [ 'open', '<input type="text">' ]
-    ];
+    var expected = [ [ 'open', '<input type="text">' ] ];
     t.plan(expected.length);
     var s = select();
     var e = s.select('input[type="text"]');
@@ -15,7 +13,6 @@ test('quoted attribute', function (t) {
             next();
         }))
     ;
-    
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
     s.write([ 'open', '<input type="submit">' ]);
@@ -27,11 +24,16 @@ test('quoted attribute', function (t) {
 });
 
 test('bare attribute', function (t) {
-    t.plan(2);
-    var s = select('input[type=text]', function (e) {
-        t.equal(e.name, 'input');
-        t.deepEqual(e.attributes, { type: 'text' });
-    });
+    var expected = [ [ 'open', '<input type="text">' ] ];
+    t.plan(expected.length);
+    var s = select();
+    var e = s.select('input[type=text]');
+    e.createReadStream()
+        .pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
+        }))
+    ;
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
     s.write([ 'open', '<input type="submit">' ]);
@@ -39,14 +41,20 @@ test('bare attribute', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });
 
 test('mixed case attribute', function (t) {
-    t.plan(2);
-    var s = select('input[type=text]', function (e) {
-        t.equal(e.name, 'input');
-        t.deepEqual(e.attributes, { type: 'text' });
-    });
+    var expected = [ [ 'open', '<input tYPe="text">' ] ];
+    t.plan(expected.length);
+    var s = select();
+    var e = s.select('input[type=text]');
+    e.createReadStream()
+        .pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
+        }))
+    ;
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
     s.write([ 'open', '<input type="submit">' ]);
@@ -54,14 +62,20 @@ test('mixed case attribute', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });
 
 test('mixed case [attribute]', function (t) {
-    t.plan(2);
-    var s = select('input[TypE=text]', function (e) {
-        t.equal(e.name, 'input');
-        t.deepEqual(e.attributes, { type: 'text' });
-    });
+    var expected = [ [ 'open', '<input type="text">' ] ];
+    t.plan(expected.length);
+    var s = select('input[TypE=text]');
+    var e = s.select('input[type=text]');
+    e.createReadStream()
+        .pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
+        }))
+    ;
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
     s.write([ 'open', '<input type="submit">' ]);
@@ -69,14 +83,20 @@ test('mixed case [attribute]', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });
 
 test('trailing whitespace attribute', function (t) {
-    t.plan(2);
-    var s = select('input[TypE=text]', function (e) {
-        t.equal(e.name, 'input');
-        t.deepEqual(e.attributes, { type: 'text', value: 'xyz' });
-    });
+    var expected = [ [ 'open', '<input type="text" value ="xyz">' ] ];
+    t.plan(expected.length);
+    var s = select('input[TypE=text]');
+    var e = s.select('input[type=text]');
+    e.createReadStream()
+        .pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
+        }))
+    ;
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
     s.write([ 'open', '<input type="submit">' ]);
@@ -84,14 +104,20 @@ test('trailing whitespace attribute', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });
 
 test('attribute extra whitespace', function (t) {
-    t.plan(2);
-    var s = select('input[TypE=text]', function (e) {
-        t.equal(e.name, 'input');
-        t.deepEqual(e.attributes, { type: 'text', value: 'xyz' });
-    });
+    var expected = [ [ 'open', '<input type="text"   value   =     xyz    >' ] ];
+    t.plan(expected.length);
+    var s = select('input[TypE=text]');
+    var e = s.select('input[type=text]');
+    e.createReadStream()
+        .pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
+        }))
+    ;
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
     s.write([ 'open', '<input type="submit">' ]);
@@ -99,14 +125,20 @@ test('attribute extra whitespace', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });
 
 test('attribute whitespace around quotes', function (t) {
-    t.plan(2);
-    var s = select('input[TypE=text]', function (e) {
-        t.equal(e.name, 'input');
-        t.deepEqual(e.attributes, { type: 'text', value: 'xyz' });
-    });
+    var expected = [ [ 'open', '<input type="text"   value   =     "xyz"    >' ] ];
+    t.plan(expected.length);
+    var s = select('input[TypE=text]');
+    var e = s.select('input[type=text]');
+    e.createReadStream()
+        .pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
+        }))
+    ;
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
     s.write([ 'open', '<input type="submit">' ]);
@@ -114,4 +146,5 @@ test('attribute whitespace around quotes', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });
