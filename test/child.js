@@ -9,11 +9,12 @@ test('child selector', function (t) {
     var expected = [ [ 'open', Buffer('<input type="text" value="abc">') ] ];
     t.plan(expected.length);
     var s = select();
-    var e = s.select('.c > input[type=text]');
-    e.createReadStream().pipe(through.obj(function (row, enc, next) {
-        t.deepEqual(row, expected.shift());
-        next();
-    }));
+    s.select('.c > input[type=text]', function (e) {
+        e.createReadStream().pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
+        }));
+    });
     readStream('child/index.html').pipe(tokenize()).pipe(s);
     s.resume();
 });
@@ -26,11 +27,12 @@ test('child selector non-immediate descendant', function (t) {
     ];
     t.plan(expected.length);
     var s = select();
-    var e = s.select('.b > .e');
-    e.createReadStream().pipe(through.obj(function (row, enc, next) {
-        t.deepEqual(row, expected.shift());
-        next();
-    }));
+    s.select('.b > .e', function (e) {
+        e.createReadStream().pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
+        }));
+    });
     readStream('child/index.html').pipe(tokenize()).pipe(s);
     s.resume();
 });
