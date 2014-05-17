@@ -1,11 +1,19 @@
 var select = require('../');
 var test = require('tape');
-var concat = require('concat-stream');
+var through = require('through2');
 
 test('match once', function (t) {
-    t.plan(1);
+    var expected = [
+        [ 'open', '<b>' ],
+        [ 'text', 'beep boop' ],
+        [ 'close', '</b>' ]
+    ];
+    t.plan(expected.length);
     var s = select('div b', function (e) {
-        t.equal(e.name, 'b');
+        e.createReadStream().pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
+        }));
     });
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
@@ -20,4 +28,5 @@ test('match once', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });

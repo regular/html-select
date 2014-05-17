@@ -10,8 +10,8 @@ var selfClosing = require('./lib/self_closing.js');
 module.exports = Plex;
 inherits(Plex, Duplex);
 
-function Plex () {
-    if (!(this instanceof Plex)) return new Plex();
+function Plex (sel, cb) {
+    if (!(this instanceof Plex)) return new Plex(sel, cb);
     Duplex.call(this, { objectMode: true });
     this._selectors = [];
     this._matching = null;
@@ -28,6 +28,8 @@ function Plex () {
         children: 'children',
         attr: getAttr
     });
+    
+    if (sel && cb) this.select(sel, cb);
 }
 
 function getTag (node) {
