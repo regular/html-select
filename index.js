@@ -5,6 +5,7 @@ var cssauron = require('cssauron');
 
 var Select = require('./lib/select.js');
 var parseTag = require('./lib/parse_tag.js');
+var selfClosing = require('./lib/self_closing.js');
 
 module.exports = Plex;
 inherits(Plex, Duplex);
@@ -20,20 +21,24 @@ function Plex () {
     this._current = this._root;
     
     this._lang = cssauron({
-        tag: function (node) {
-            if (node.tag) return node.tag;
-            if (!node.row) return undefined;
-            var p = parseTag(node.row[1]);
-            node._parsed = p;
-            node.tag = p.name;
-            return node.tag;
-        },
+        tag: function (node) { return getTag(node) },
         class: function (node) { return getAttr(node, 'class') },
         id: function (node) { return getAttr(node, 'id') },
         parent: 'parent',
         children: 'children',
         attr: getAttr
     });
+}
+
+function getTag (node) {
+    if (node.tag) return node.tag;
+    if (!node.row) return undefined;
+    if (!node._parsed) {
+        var p = parseTag(node.row[1]);
+        node._parsed = p;
+        node.tag = p.name;
+    }
+    return node.tag;
 }
     
 function getAttr (node, key) {
@@ -95,6 +100,10 @@ Plex.prototype._advance = function () {
         
         for (var i = 0, l = self._selectors.length; i < l; i++) {
             self._selectors[i]._exec(self._current, row);
+        }
+        
+        if (self._current.parent && selfClosing(getTag(self._current))) {
+            self._current = self._current.parent;
         }
         if (!self._matching) self.push(row);
     });
