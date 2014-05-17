@@ -1,13 +1,18 @@
 var select = require('../');
 var test = require('tape');
-var concat = require('concat-stream');
+var through = require('through2');
 
 test('read stream', function (t) {
-    t.plan(2);
+    var expected = [
+        [ 'open', '<b>' ],
+        [ 'text', 'beep boop' ],
+        [ 'close', '</b>' ]
+    ];
+    t.plan(expected.length);
     var s = select('div b', function (e) {
-        t.equal(e.name, 'b');
-        e.createReadStream().pipe(concat(function (body) {
-            t.equal(body.toString('utf8'), 'beep boop');
+        e.createReadStream().pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
         }));
     });
     s.write([ 'open', '<html>' ]);
@@ -20,14 +25,20 @@ test('read stream', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
+    s.resume();
 });
 
 test('more read stream', function (t) {
-    t.plan(2);
+    var expected = [
+        [ 'open', '<b>' ],
+        [ 'text', 'beep boop' ],
+        [ 'close', '</b>' ]
+    ];
+    t.plan(expected.length);
     var s = select('div b', function (e) {
-        t.equal(e.name, 'b');
-        e.createReadStream().pipe(concat(function (body) {
-            t.equal(body.toString('utf8'), 'beep boop');
+        e.createReadStream().pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
         }));
     });
     s.write([ 'open', '<html>' ]);
@@ -43,24 +54,5 @@ test('more read stream', function (t) {
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
-});
-
-test('outer read stream', function (t) {
-    t.plan(2);
-    var s = select('div b', function (e) {
-        t.equal(e.name, 'b');
-        e.createReadStream({ outer: true }).pipe(concat(function (body) {
-            t.equal(body.toString('utf8'), '<b>beep boop</b>');
-        }));
-    });
-    s.write([ 'open', '<html>' ]);
-    s.write([ 'open', '<body>' ]);
-    s.write([ 'open', '<div>' ]);
-    s.write([ 'open', '<b>' ]);
-    s.write([ 'text', 'beep boop' ]);
-    s.write([ 'close', '</b>' ]);
-    s.write([ 'close', '<div>' ]);
-    s.write([ 'close', '</body>' ]);
-    s.write([ 'close', '</html>' ]);
-    s.end();
+    s.resume();
 });
