@@ -72,7 +72,7 @@ Plex.prototype.select = function (sel, cb) {
         });
     });
     this._selectors.push(s);
-    return s;
+    return this;
 };
 
 Plex.prototype._pull = function (cb) {
