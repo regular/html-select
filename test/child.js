@@ -2,27 +2,33 @@ var select = require('../');
 var test = require('tape');
 var fs = require('fs');
 var path = require('path');
-var concat = require('concat-stream');
+var through = require('through2');
 var tokenize = require('html-tokenize');
 
 test('child selector', function (t) {
-    t.plan(2);
-    var s = select('.c > input[type=text]', function (e) {
-        t.equal(e.name, 'input');
-        t.equal(e.attributes.value, 'abc');
-    });
+    var expected = [ [ 'open', Buffer('<input type="text" value="abc">') ] ];
+    t.plan(expected.length);
+    var s = select();
+    var e = s.select('.c > input[type=text]');
+    e.createReadStream().pipe(through.obj(function (row, enc, next) {
+        t.deepEqual(row, expected.shift());
+        next();
+    }));
     readStream('child/index.html').pipe(tokenize()).pipe(s);
+    s.resume();
 });
 
 test('child selector non-immediate descendant', function (t) {
-    t.plan(2);
-    var s = select('.b > .e', function (e) {
-        t.equal(e.name, 'div');
-        e.createReadStream().pipe(concat(function (body) {
-            t.equal(body.toString('utf8'), 'xyz');
-        }));
-    });
+    var expected = [ [ 'open', Buffer('<div class="e">xyz</div>') ] ];
+    t.plan(expected.length);
+    var s = select();
+    var e = s.select('.b > .e');
+    e.createReadStream().pipe(through.obj(function (row, enc, next) {
+        t.deepEqual(row, expected.shift());
+        next();
+    }));
     readStream('child/index.html').pipe(tokenize()).pipe(s);
+    s.resume();
 });
 
 test('child no-match selector', function (t) {
