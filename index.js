@@ -14,7 +14,7 @@ function Plex (sel, cb) {
     if (!(this instanceof Plex)) return new Plex(sel, cb);
     Duplex.call(this, { objectMode: true });
     this._selectors = [];
-    this._matching = null;
+    this._matching = 0;
     this._pullQueue = [];
     
     this._root = {};
@@ -66,19 +66,30 @@ Plex.prototype.select = function (sel, cb) {
     var self = this;
     var pull = function () { self._advance() };
     var s = new Select(this._lang(sel), pull);
-    s.on('match', function () {
-        self._matching = s;
-        if (cb) cb(s);
-        s.output.pipe(through.obj(function (row, enc, next) {
-            self.push(row);
-            next();
-        }));
-        s.output.on('end', function () {
-            self._matching = null;
-            self._advance();
-        });
-    });
+    onfork(s);
     this._selectors.push(s);
+    
+    function onfork (s) {
+        s.on('match', function () {
+            self._matching ++;
+            if (cb) cb(s);
+            s.output.pipe(through.obj(function (row, enc, next) {
+                self.push(row);
+                next();
+            }));
+            s.output.on('end', function () {
+                self._matching --;
+                self._advance();
+            });
+        });
+        s.on('fork', function (sub) {
+            self._selectors.push(sub);
+            sub.once('close', function () {
+                var ix = self._selectors.indexOf(sub);
+                if (ix >= 0) self._selectors.splice(ix, 1);
+            });
+        });
+    }
     return this;
 };
 
@@ -100,7 +111,7 @@ Plex.prototype._pull = function (cb) {
 };
 
 Plex.prototype._read = function (n) {
-    if (!this._matching) this._advance();
+    if (this._matching === 0) this._advance();
 };
 
 Plex.prototype._advance = function () {
@@ -121,7 +132,7 @@ Plex.prototype._advance = function () {
         if (self._current.selfClosing) {
             self._current = self._current.parent;
         }
-        if (!self._matching) self.push(row);
+        if (self._matching === 0) self.push(row);
     });
 };
 

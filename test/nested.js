@@ -22,7 +22,7 @@ test('nested matches', function (t) {
             [ 'close', '</div>' ]
         ]
     ];
-    t.plan(expected.length);
+    t.plan(expected[0].length + expected[1].length);
     var s = select('div', function (e) {
         var ex = expected.shift();
         e.createReadStream().pipe(through.obj(function (row, enc, next) {
