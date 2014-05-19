@@ -137,7 +137,8 @@ Plex.prototype._advance = function () {
         
         var p = self._updateTree(row);
         for (var i = 0, l = self._selectors.length; i < l; i++) {
-            self._selectors[i]._exec(self._current, row, p);
+            var m = self._selectors[i]._exec(self._current, row, p);
+            if (m) break;
         }
         while (self._after.length) {
             self._after.shift()();
