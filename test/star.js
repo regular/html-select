@@ -56,8 +56,10 @@ test('star', function (t) {
     
     var s = select('*', function (e) {
         var ex = expected.shift();
+        var ix = expected.length;
         e.createReadStream().pipe(through.obj(function (row, enc, next) {
-            t.deepEqual(row, ex.shift());
+            var desc = 'in comparison ' + ix + ', item ' + (ex.length - 1);
+            t.deepEqual(row, ex.shift(), desc);
             next();
         }));
     });
