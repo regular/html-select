@@ -39,9 +39,9 @@ test('nested matches', function (t) {
     s.write([ 'text', '\n' ]);
     s.write([ 'open', '<div class="x">' ]);
     s.write([ 'text', 'woo' ]);
-    s.write([ 'close', '<div>' ]);
+    s.write([ 'close', '</div>' ]);
     s.write([ 'text', '\n' ]);
-    s.write([ 'close', '<div>' ]);
+    s.write([ 'close', '</div>' ]);
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();

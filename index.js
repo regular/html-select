@@ -67,9 +67,9 @@ Plex.prototype.select = function (sel, cb) {
     var pull = function () { self._advance() };
     var s = new Select(this._lang(sel), pull);
     onfork(s);
-    this._selectors.push(s);
     
     function onfork (s) {
+        self._selectors.push(s);
         s.on('match', function () {
             self._matching ++;
             if (cb) cb(s);
@@ -83,11 +83,11 @@ Plex.prototype.select = function (sel, cb) {
             });
         });
         s.on('fork', function (sub) {
-            self._selectors.push(sub);
             sub.once('close', function () {
                 var ix = self._selectors.indexOf(sub);
                 if (ix >= 0) self._selectors.splice(ix, 1);
             });
+            onfork(sub);
         });
     }
     return this;
