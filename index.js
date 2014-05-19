@@ -111,10 +111,11 @@ Plex.prototype._pull = function (cb) {
     else if (this._finished && this._matching === 0) {
         cb(null);
     }
-    else if (this._finished) {
-        this.on('_done', function () { cb(null) });
+    else if (this._finished && !this._ondone) {
+        this._ondone = function () { cb(null) };
+        this.once('_done', this._ondone);
     }
-    else {
+    else if (!this._ondone) {
         this._pullQueue.push(cb);
     }
 };
