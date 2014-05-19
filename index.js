@@ -79,6 +79,9 @@ Plex.prototype.select = function (sel, cb) {
             }));
             s.output.on('end', function () {
                 self._matching --;
+                if (self._finished && self._matching === 0) {
+                    self.emit('_done');
+                }
                 self._advance();
             });
         });
@@ -102,8 +105,11 @@ Plex.prototype._pull = function (cb) {
         cb(buf);
         next();
     }
-    else if (this._finished) {
+    else if (this._finished && this._matching === 0) {
         cb(null);
+    }
+    else if (this._finished) {
+        this.on('_done', function () { cb(null) });
     }
     else {
         this._pullQueue.push(cb);
@@ -127,7 +133,8 @@ Plex.prototype._advance = function () {
         
         var p = self._updateTree(row);
         for (var i = 0, l = self._selectors.length; i < l; i++) {
-            self._selectors[i]._exec(self._current, row, p);
+            var s = self._selectors[i];
+            if (s) s._exec(self._current, row, p);
         }
         if (self._current.selfClosing) {
             self._current = self._current.parent;
