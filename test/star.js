@@ -47,21 +47,24 @@ test('star', function (t) {
             [ 'close', '</div>' ]
         ],
         [
+            [ 'open', '<b>' ],
+            [ 'text', 'beep boop' ],
+            [ 'close', '</b>' ]
+        ],
+        [
             [ 'open', '<div class="x">' ],
             [ 'text', 'woo' ],
             [ 'close', '</div>' ]
         ]
     ];
-    t.plan(expected.reduce(function (sum, ex) { return sum + ex }, 0));
+    t.plan(expected.length);
     
     var s = select('*', function (e) {
         var ex = expected.shift();
-        var ix = expected.length;
-        e.createReadStream().pipe(through.obj(function (row, enc, next) {
-            var desc = 'in comparison ' + ix + ', item ' + (ex.length - 1);
-            t.deepEqual(row, ex.shift(), desc);
-            next();
-        }));
+        var rows = [];
+        function write (row, enc, next) { rows.push(row); next() }
+        function end () { t.deepEqual(rows, ex); }
+        e.createReadStream().pipe(through.obj(write, end));
     });
     s.write([ 'open', '<html>' ]);
     s.write([ 'open', '<body>' ]);
