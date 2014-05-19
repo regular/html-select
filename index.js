@@ -16,6 +16,7 @@ function Plex (sel, cb) {
     this._selectors = [];
     this._matching = 0;
     this._pullQueue = [];
+    this._after = [];
     
     this._root = {};
     this._current = this._root;
@@ -87,8 +88,10 @@ Plex.prototype.select = function (sel, cb) {
         });
         s.on('fork', function (sub) {
             sub.once('close', function () {
-                var ix = self._selectors.indexOf(sub);
-                if (ix >= 0) self._selectors.splice(ix, 1);
+                self._after.push(function () {
+                    var ix = self._selectors.indexOf(sub);
+                    if (ix >= 0) self._selectors.splice(ix, 1);
+                });
             });
             onfork(sub);
         });
@@ -133,9 +136,12 @@ Plex.prototype._advance = function () {
         
         var p = self._updateTree(row);
         for (var i = 0, l = self._selectors.length; i < l; i++) {
-            var s = self._selectors[i];
-            if (s) s._exec(self._current, row, p);
+            self._selectors[i]._exec(self._current, row, p);
         }
+        while (self._after.length) {
+            self._after.shift()();
+        }
+        
         if (self._current.selfClosing) {
             self._current = self._current.parent;
         }
