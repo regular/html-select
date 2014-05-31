@@ -85,6 +85,8 @@ Plex.prototype.select = function (sel, cb) {
                 }
                 self._advance();
             });
+            
+            if (s._streams === 0) s.createReadStream();
         });
         s.on('fork', function (sub) {
             sub.once('close', function () {

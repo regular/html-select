@@ -7,6 +7,7 @@ var fs = require('fs');
 test('fork match', function (t) {
     t.plan(5 + 3);
     var s = select();
+    
     var a = false;
     s.select('article username', function (e) {
         if (a) return;
