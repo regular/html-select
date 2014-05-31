@@ -206,22 +206,31 @@ automatically.
 Register a callback `cb(elem)` to fire whenever the css `selector` string
 matches.
 
-## elem.createReadStream()
+## elem.createReadStream(opts)
 
 Create a readable object mode stream at the selector. The readable stream
 contains all the matching tokenized html objects including the element that
 matched and its closing tag.
 
-## elem.createWriteStream()
+If `opts.inner` is true, only read the inner content. Otherwrite read the outer
+content.
+
+## elem.createWriteStream(opts)
 
 Create a writable object mode stream at the selector. The writable stream writes
 into the document stream at the selector, replacing the existing content.
 
-## elem.createStream()
+If `opts.inner` is true, only write to the inner content. Otherwrite write to
+the outer content.
+
+## elem.createStream(opts)
 
 Create a duplex object mode stream at the selector. The writable side will write
 into the document stream  at the selector, replacing the existing content. The
 readable side contains the existing content.
+
+If `opts.inner` is true, only read and write to the inner content. Otherwrite
+read and write to the outer content.
 
 # events
 
