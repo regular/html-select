@@ -138,5 +138,5 @@ test('delayed transform', function (t) {
 });
 
 function readStream () {
-    return fs.createReadStream(__dirname + '/tr/index.html');
+    return fs.createReadStream(__dirname + '/tr_delay/index.html');
 }
