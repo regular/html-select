@@ -2,46 +2,46 @@ var select = require('../');
 var test = require('tape');
 var through = require('through2');
 
-test('nested matches', function (t) {
+test('quoted attribute', function (t) {
     var expected = [
         [
-            [ 'open', '<div>' ],
-            [ 'open', '<b>' ],
-            [ 'text', 'beep boop' ],
-            [ 'close', '</b>' ],
-            [ 'text', '\n' ],
-            [ 'open', '<div class="x">' ],
-            [ 'text', 'woo' ],
+            [ 'open', '<div class="a">' ],
+            [ 'test', '\n' ],
+            [ 'open', '<div class="b">' ],
+            [ 'test', '\n' ],
             [ 'close', '</div>' ],
-            [ 'text', '\n' ],
+            [ 'test', '\n' ],
             [ 'close', '</div>' ]
         ],
         [
-            [ 'open', '<div class="x">' ],
-            [ 'text', 'woo' ],
+            [ 'open', '<div class="b">' ],
+            [ 'test', '\n' ],
             [ 'close', '</div>' ]
         ]
     ];
-    t.plan(expected[0].length + expected[1].length);
-    var s = select('div', function (e) {
+    t.plan(expected.reduce(function (sum, x) { return sum + x.length }, 0));
+    
+    var s = select().select('div', function (e) {
         var ex = expected.shift();
-        e.createReadStream().pipe(through.obj(function (row, enc, next) {
-            t.deepEqual(row, ex.shift());
-            next();
-        }));
+        e.createReadStream()
+            .pipe(through.obj(function (row, enc, next) {
+                t.deepEqual(row, ex.shift());
+                next();
+            }))
+        ;
     });
     s.write([ 'open', '<html>' ]);
+    s.write([ 'test', '\n' ]);
     s.write([ 'open', '<body>' ]);
-    s.write([ 'open', '<div>' ]);
-    s.write([ 'open', '<b>' ]);
-    s.write([ 'text', 'beep boop' ]);
-    s.write([ 'close', '</b>' ]);
-    s.write([ 'text', '\n' ]);
-    s.write([ 'open', '<div class="x">' ]);
-    s.write([ 'text', 'woo' ]);
+    s.write([ 'test', '\n' ]);
+    s.write([ 'open', '<div class="a">' ]);
+    s.write([ 'test', '\n' ]);
+    s.write([ 'open', '<div class="b">' ]);
+    s.write([ 'test', '\n' ]);
     s.write([ 'close', '</div>' ]);
-    s.write([ 'text', '\n' ]);
+    s.write([ 'test', '\n' ]);
     s.write([ 'close', '</div>' ]);
+    s.write([ 'test', '\n' ]);
     s.write([ 'close', '</body>' ]);
     s.write([ 'close', '</html>' ]);
     s.end();
