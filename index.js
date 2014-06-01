@@ -76,7 +76,9 @@ Plex.prototype.select = function (sel, cb) {
             if (cb) cb(s);
             
             s.output.pipe(through.obj(function (row, enc, next) {
-                self.push(row);
+                var p = row !== self._prev;
+                self._prev = row;
+                if (p) self.push(row);
                 next();
             }));
             s.output.on('end', function () {
@@ -84,7 +86,7 @@ Plex.prototype.select = function (sel, cb) {
                 if (self._finished && self._matching === 0) {
                     self.emit('_done');
                 }
-                self._advance();
+                if (!self._matching) self._advance();
             });
             
             if (s._streams === 0) s.createReadStream();
