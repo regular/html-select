@@ -251,6 +251,12 @@ Return an object with a single attribute value named by `key`.
 
 Return an object with all attributes.
 
+# properties
+
+## elem.name
+
+The string name of the tag.
+
 # events
 
 ## elem.on('close', function () {})
