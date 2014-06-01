@@ -4,9 +4,10 @@ var through = require('through2');
 
 test('get an attribute', function (t) {
     var expected = [ 'a', 'b', 'c' ];
-    t.plan(expected.length);
+    t.plan(expected.length * 2);
     
     var s = select().select('div', function (e) {
+        t.equal(e.name, 'div');
         t.equal(e.getAttribute('class'), expected.shift());
     });
     
