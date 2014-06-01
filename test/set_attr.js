@@ -30,3 +30,43 @@ test('set an attribute', function (t) {
         next();
     }));
 });
+
+test('set multiple attributes', function (t) {
+    var expected = [
+        [ 'open', '<html>' ],
+        [ 'open', '<body>' ],
+        [ 'open', '<div class="a" n="0">' ],
+        [ 'open', '<div class="b" n="1">' ],
+        [ 'open', '<div class="c" n="2">' ],
+        [ 'text', 'beep boop' ],
+        [ 'close', '</div>' ],
+        [ 'close', '</div>' ],
+        [ 'close', '</div>' ],
+        [ 'close', '</body>' ],
+        [ 'close', '</html>' ]
+    ];
+    
+    t.plan(expected.length);
+    var n = 0;
+    var s = select().select('div', function (e) {
+        e.setAttribute('n', String(n++));
+    });
+    
+    s.write([ 'open', '<html>' ]);
+    s.write([ 'open', '<body>' ]);
+    s.write([ 'open', '<div class="a">' ]);
+    s.write([ 'open', '<div class="b">' ]);
+    s.write([ 'open', '<div class="c">' ]);
+    s.write([ 'text', 'beep boop' ]);
+    s.write([ 'close', '</div>' ]);
+    s.write([ 'close', '</div>' ]);
+    s.write([ 'close', '</div>' ]);
+    s.write([ 'close', '</body>' ]);
+    s.write([ 'close', '</html>' ]);
+    s.end();
+    
+    s.pipe(through.obj(function (row, enc, next) {
+        t.deepEqual(row, expected.shift());
+        next();
+    }));
+});
