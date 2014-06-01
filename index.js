@@ -17,6 +17,7 @@ function Plex (sel, cb) {
     this._matching = 0;
     this._pullQueue = [];
     this._after = [];
+    this._prev = [];
     
     this._root = {};
     this._current = this._root;
@@ -76,8 +77,15 @@ Plex.prototype.select = function (sel, cb) {
             if (cb) cb(s);
             
             s.output.pipe(through.obj(function (row, enc, next) {
-                var p = row !== self._prev;
-                self._prev = row;
+                var p = self._prev.indexOf(row) < 0;
+                self._prev.push(row);
+                if (p && !self._prevClear) {
+                    self._after.push(function () {
+                        self._prev = [];
+                        self._prevClear = false;
+                    });
+                    self._prevClear = true;
+                }
                 if (p) self.push(row);
                 next();
             }));

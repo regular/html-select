@@ -78,7 +78,7 @@ test('selectively set attributes', function (t) {
         [ 'open', '<div class="a" n="0">' ],
         [ 'open', '<div class="b">' ],
         [ 'open', '<div class="c" n="1">' ],
-        [ 'open', '<div class="d">' ],
+        [ 'open', '<div class="d" n="2">' ],
         [ 'open', '<div class="e">' ],
         [ 'text', 'beep boop' ],
         [ 'close', '</div>' ],
