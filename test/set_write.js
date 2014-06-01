@@ -16,7 +16,7 @@ test('set and write', function (t) {
     t.plan(expected.length);
     var s = select().select('a', function (e) {
         e.setAttribute('href', '/xyz');
-        e.createWriteStream().end('beep boop');
+        e.createWriteStream({ inner: true }).end([ 'data', 'beep boop' ]);
     });
     
     s.write([ 'open', '<html>' ]);
