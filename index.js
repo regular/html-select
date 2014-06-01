@@ -74,6 +74,8 @@ Plex.prototype.select = function (sel, cb) {
         s.on('match', function () {
             self._matching ++;
             if (cb) cb(s);
+            s._writeFirst();
+            
             s.output.pipe(through.obj(function (row, enc, next) {
                 self.push(row);
                 next();
