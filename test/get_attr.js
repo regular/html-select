@@ -44,3 +44,27 @@ test('get a self-closing attribute', function (t) {
     
     s.resume();
 });
+
+test('get attributes', function (t) {
+    var expected = [
+        { type: 'text', value: 'turtle rap' },
+        { type: 'submit', value: 'go ninja go' },
+    ];
+    t.plan(expected.length);
+    
+    var s = select().select('input', function (e) {
+        t.deepEqual(e.getAttributes(), expected.shift());
+    });
+    
+    s.write([ 'open', '<html>' ]);
+    s.write([ 'open', '<body>' ]);
+    s.write([ 'open', '<form>' ]);
+    s.write([ 'open', '<input type="text" value="turtle rap">' ]);
+    s.write([ 'open', '<input type="submit" value="go ninja go">' ]);
+    s.write([ 'close', '</form>' ]);
+    s.write([ 'close', '</body>' ]);
+    s.write([ 'close', '</html>' ]);
+    s.end();
+    
+    s.resume();
+});
