@@ -232,6 +232,25 @@ readable side contains the existing content.
 If `opts.inner` is true, only read and write to the inner content. Otherwrite
 read and write to the outer content.
 
+## elem.setAttribute(key, value)
+
+Set an attribute named by `key` to `value`.
+
+If `value` is `true`, the attribute will appear without an equal sign in the
+markup.
+
+## elem.removeAttribute(key)
+
+Remove an attribute named by `key`.
+
+## elem.getAttribute(key)
+
+Return an object with a single attribute value named by `key`.
+
+## elem.getAttributes()
+
+Return an object with all attributes.
+
 # events
 
 ## elem.on('close', function () {})
