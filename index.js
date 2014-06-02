@@ -91,10 +91,12 @@ Plex.prototype.select = function (sel, cb) {
             }));
             s.output.on('end', function () {
                 self._matching --;
-                if (self._finished && self._matching === 0) {
-                    self.emit('_done');
-                }
-                if (!self._matching) self._advance();
+                process.nextTick(function () {
+                    if (self._finished && self._matching === 0) {
+                        self.emit('_done');
+                    }
+                    if (!self._matching) self._advance();
+                });
             });
             
             if (s._streams === 0) s.createReadStream();
