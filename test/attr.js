@@ -70,8 +70,8 @@ test('mixed case attribute', function (t) {
 test('mixed case [attribute]', function (t) {
     var expected = [ [ 'open', '<input type="text">' ] ];
     t.plan(expected.length);
-    var s = select('input[TypE=text]');
-    s.select('input[type=text]', function (e) {
+    var s = select();
+    s.select('input[TypE=text]', function (e) {
         e.createReadStream()
             .pipe(through.obj(function (row, enc, next) {
                 t.deepEqual(row, expected.shift());
@@ -92,8 +92,8 @@ test('mixed case [attribute]', function (t) {
 test('trailing whitespace attribute', function (t) {
     var expected = [ [ 'open', '<input type="text" value ="xyz">' ] ];
     t.plan(expected.length);
-    var s = select('input[TypE=text]');
-    s.select('input[type=text]', function (e) {
+    var s = select();
+    s.select('input[TypE=text]', function (e) {
         e.createReadStream()
             .pipe(through.obj(function (row, enc, next) {
                 t.deepEqual(row, expected.shift());
@@ -114,8 +114,8 @@ test('trailing whitespace attribute', function (t) {
 test('attribute extra whitespace', function (t) {
     var expected = [ [ 'open', '<input type="text"   value   =     xyz    >' ] ];
     t.plan(expected.length);
-    var s = select('input[TypE=text]');
-    s.select('input[type=text]', function (e) {
+    var s = select();
+    s.select('input[TypE=text]', function (e) {
         e.createReadStream()
             .pipe(through.obj(function (row, enc, next) {
                 t.deepEqual(row, expected.shift());
@@ -136,7 +136,7 @@ test('attribute extra whitespace', function (t) {
 test('attribute whitespace around quotes', function (t) {
     var expected = [ [ 'open', '<input type="text"   value   =     "xyz"    >' ] ];
     t.plan(expected.length);
-    var s = select('input[TypE=text]');
+    var s = select();
     s.select('input[type=text]', function (e) {
         e.createReadStream()
             .pipe(through.obj(function (row, enc, next) {
