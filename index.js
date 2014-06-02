@@ -50,7 +50,8 @@ function getTag (node) {
     return node.tag;
 }
     
-function getAttr (node, key) {
+function getAttr (node, k) {
+    var key = k.toLowerCase();
     if (node.attributes && !key) return node.attributes;
     else if (node.attributes) return node.attributes[key];
     if (!node._parsed) {
