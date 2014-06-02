@@ -4,18 +4,19 @@ var tokenize = require('html-tokenize');
 var through = require('through2');
 var fs = require('fs');
 
-var expected = fs.readFileSync(__dirname + '/loud_delay/expected.html', 'utf8');
+var expected = require('./loud_delay/expected.json');
 
 test('loud delay', function (t) {
-    t.plan(1);
-    var s = select();
+    t.plan(expected.length);
     
+    var s = select();
     s.select('.loud', function (elem) {
         var loud = elem.createStream();
-        loud.pipe(through(function (buf) {
+        loud.pipe(through.obj(function (row, enc, next) {
             var self = this;
             setTimeout(function () {
-                self.queue(buf.toString().toUpperCase());
+                self.push([ 'data', row[1].toString().toUpperCase() ]);
+                next();
             }, 10);
         })).pipe(loud);
     });
@@ -24,7 +25,8 @@ test('loud delay', function (t) {
         .pipe(tokenize())
         .pipe(s)
         .pipe(through.obj(function (row, enc, next) {
-            console.error([ row[0], row[1].toString('utf8') ]);
+            var r = [ row[0], row[1].toString('utf8') ];
+            t.deepEqual(r, expected.shift());
             next();
         }))
     ;
