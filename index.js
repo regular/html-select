@@ -14,7 +14,7 @@ function Plex (sel, cb) {
     if (!(this instanceof Plex)) return new Plex(sel, cb);
     Duplex.call(this, { objectMode: true });
     this._selectors = [];
-    this._matching = 0;
+    this._matching = [];
     this._pullQueue = [];
     this._after = [];
     this._prev = [];
@@ -74,7 +74,7 @@ Plex.prototype.select = function (sel, cb) {
     function onfork (s) {
         self._selectors.push(s);
         s.on('match', function () {
-            self._matching ++;
+            self._matching.push(s);
             if (cb) cb(s);
             
             s.output.pipe(through.obj(function (row, enc, next) {
@@ -91,12 +91,12 @@ Plex.prototype.select = function (sel, cb) {
                 next();
             }));
             s.output.on('end', function () {
-                self._matching --;
+                self._matching.pop();
                 process.nextTick(function () {
-                    if (self._finished && self._matching === 0) {
+                    if (self._finished && self._matching.length === 0) {
                         self.emit('_done');
                     }
-                    if (!self._matching) self._advance();
+                    if (!self._matching.length) self._advance();
                 });
             });
             
@@ -124,7 +124,7 @@ Plex.prototype._pull = function (cb) {
         cb(buf);
         next();
     }
-    else if (this._finished && this._matching === 0) {
+    else if (this._finished && this._matching.length === 0) {
         cb(null);
     }
     else if (this._finished && !this._ondone) {
@@ -137,7 +137,7 @@ Plex.prototype._pull = function (cb) {
 };
 
 Plex.prototype._read = function (n) {
-    if (this._matching === 0) this._advance();
+    if (this._matching.length === 0) this._advance();
 };
 
 Plex.prototype._advance = function () {
@@ -164,7 +164,7 @@ Plex.prototype._advance = function () {
         if (self._current.selfClosing) {
             self._current = self._current.parent;
         }
-        if (self._matching === 0) self.push(row);
+        if (self._matching.length === 0) self.push(row);
     });
 };
 
