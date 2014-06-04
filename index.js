@@ -3,7 +3,7 @@ var inherits = require('inherits');
 var Duplex = require('readable-stream').Duplex;
 var cssauron = require('cssauron');
 
-var Select = require('./lib/select.js');
+var Match = require('./lib/match.js');
 var parseTag = require('./lib/parse_tag.js');
 var selfClosing = require('./lib/self_closing.js');
 
@@ -14,10 +14,10 @@ function Plex (sel, cb) {
     if (!(this instanceof Plex)) return new Plex(sel, cb);
     Duplex.call(this, { objectMode: true });
     this._selectors = [];
-    this._matching = [];
-    this._pullQueue = [];
+    this._matching = [ through.obj() ];
+    this._reading = this._matching.slice();
+    
     this._after = [];
-    this._prev = [];
     
     this._root = {};
     this._current = this._root;
@@ -29,11 +29,6 @@ function Plex (sel, cb) {
         parent: 'parent',
         children: 'children',
         attr: getAttr
-    });
-    
-    this.on('finish', function () {
-        this._finished = true;
-        this._advance();
     });
     
     if (sel && cb) this.select(sel, cb);
@@ -66,106 +61,8 @@ function getAttr (node, k) {
 }
 
 Plex.prototype.select = function (sel, cb) {
-    var self = this;
-    var pull = function () { self._advance() };
-    var s = new Select(this._lang(sel), pull);
-    onfork(s);
-    
-    function onfork (s) {
-        self._selectors.push(s);
-        s.on('match', function () {
-            self._matching.push(s);
-            if (cb) cb(s);
-            
-            s.output.pipe(through.obj(function (row, enc, next) {
-                var p = self._prev.indexOf(row) < 0;
-                self._prev.push(row);
-                if (p && !self._prevClear) {
-                    self._after.push(function () {
-                        self._prev = [];
-                        self._prevClear = false;
-                    });
-                    self._prevClear = true;
-                }
-                if (p) self.push(row);
-                next();
-            }));
-            s.output.on('end', function () {
-                self._matching.pop();
-                process.nextTick(function () {
-                    if (self._finished && self._matching.length === 0) {
-                        self.emit('_done');
-                    }
-                    if (!self._matching.length) self._advance();
-                });
-            });
-            
-            if (s._streams === 0) s.createReadStream();
-        });
-        s.on('fork', function (sub) {
-            sub.once('close', function () {
-                self._after.push(function () {
-                    var ix = self._selectors.indexOf(sub);
-                    if (ix >= 0) self._selectors.splice(ix, 1);
-                });
-            });
-            onfork(sub);
-        });
-    }
+    this._selectors.push({ test: this._lang(sel), fn: cb });
     return this;
-};
-
-Plex.prototype._pull = function (cb) {
-    var buf = this._buffer;
-    var next = this._next;
-    if (buf) {
-        this._buffer = null;
-        this._next = null;
-        cb(buf);
-        next();
-    }
-    else if (this._finished && this._matching.length === 0) {
-        cb(null);
-    }
-    else if (this._finished && !this._ondone) {
-        this._ondone = function () { cb(null) };
-        this.once('_done', this._ondone);
-    }
-    else if (!this._ondone) {
-        this._pullQueue.push(cb);
-    }
-};
-
-Plex.prototype._read = function (n) {
-    if (this._matching.length === 0) this._advance();
-};
-
-Plex.prototype._advance = function () {
-    var self = this;
-    this._pull(function (row) {
-        if (row === null) {
-            for (var i = 0, l = self._selectors.length; i < l; i++) {
-                var s = self._selectors[i];
-                if (s.input) s.input.end();
-            }
-            return self.push(null);
-        }
-        
-        var p = self._updateTree(row);
-        var created = false;
-        for (var i = 0, l = self._selectors.length; i < l; i++) {
-            var m = self._selectors[i]._exec(self._current, row, p, created);
-            created = m || created;
-        }
-        while (self._after.length) {
-            self._after.shift()();
-        }
-        
-        if (self._current.selfClosing) {
-            self._current = self._current.parent;
-        }
-        if (self._matching.length === 0) self.push(row);
-    });
 };
 
 Plex.prototype._updateTree = function (row) {
@@ -178,21 +75,54 @@ Plex.prototype._updateTree = function (row) {
     }
     else if (row[0] === 'close') {
         if (this._current.parent) this._current = this._current.parent;
-        return parseTag(row[1]);
     }
+    return this._current;
 };
 
-Plex.prototype._write = function (buf, enc, next) {
-    if (this._pullQueue.length) {
-        this._pullQueue.shift()(buf);
-        next();
+Plex.prototype._read = function read (n) {
+    var self = this;
+    var r = this._reading[this._reading.length - 1];
+    var row, reads = 0;
+    while ((row = r.read()) !== null) {
+        this.push(row);
+        reads ++;
     }
-    else {
-        this._buffer = buf;
-        this._next = next;
-    }
+    if (reads === 0) r.once('readable', function () { read.call(self) });
 };
 
-Plex.prototype._err = function (msg) {
-    this.emit('error', new Error(msg));
+Plex.prototype._write = function (row, enc, next) {
+    var self = this;
+    var tree = this._updateTree(row);
+    
+    for (var i = 0, l = this._selectors.length; i < l; i++) {
+        var s = this._selectors[i];
+//        if (s.test(tree)) this._createMatch();
+    }
+    
+//console.error('WRITE', row);
+    this._matching[0].write(row);
+    
+    while (this._after.length) this._after.shift()();
+    
+    next();
+};
+
+Plex.prototype._createMatch = function () {
+    var self = this;
+    var m = new Match;
+    m.once('finish', function () {
+        self._after.push(function () {
+            var ix = self._matching.indexOf(m);
+            self._matching.splice(ix, 1);
+        });
+    });
+    m.once('end', function () {
+        self._after.push(function () {
+            var ix = self._reading.indexOf(m);
+            self._reading.splice(ix, 1);
+        });
+    });
+    
+    self._matching.push(m);
+    self._reading.push(m);
 };
