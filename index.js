@@ -16,6 +16,7 @@ function Plex (sel, cb) {
     this._selectors = [];
     this._matching = [ through.obj() ];
     this._reading = this._matching.slice();
+    this._pending = false;
     
     this._after = [];
     
@@ -87,41 +88,58 @@ Plex.prototype._read = function read (n) {
         this.push(row);
         reads ++;
     }
-    if (reads === 0) r.once('readable', function () { read.call(self) });
+    if (reads === 0) {
+        this._pending = true;
+        r.once('readable', function () { read.call(self) });
+    }
+    else {
+        this._pending = false;
+        this._next();
+    }
 };
 
 Plex.prototype._write = function (row, enc, next) {
     var self = this;
     var tree = this._updateTree(row);
     
-    for (var i = 0, l = this._selectors.length; i < l; i++) {
-        var s = this._selectors[i];
-//        if (s.test(tree)) this._createMatch();
+    if (row[0] === 'open') {
+        for (var i = 0, l = this._selectors.length; i < l; i++) {
+            var s = this._selectors[i];
+            if (s.test(tree)) {
+                this._createMatch();
+            }
+        }
+    }
+    else if (row[0] === 'close') {
+        for (var i = 1, l = this._matching.length; i < l; i++) {
+            this._matching[i]._check(this._current);
+        }
     }
     
-//console.error('WRITE', row);
     this._matching[0].write(row);
     
     while (this._after.length) this._after.shift()();
     
-    next();
+    if (this._pending) next()
+    else this._next = next;
 };
 
 Plex.prototype._createMatch = function () {
     var self = this;
-    var m = new Match;
-    m.once('finish', function () {
-        self._after.push(function () {
-            var ix = self._matching.indexOf(m);
-            self._matching.splice(ix, 1);
-        });
+    var m = new Match(this._current);
+    m.once('close', function () {
+        var ix = self._matching.indexOf(m);
+        self._matching.splice(ix, 1);
+        next.unpipe(m);
+        m.end();
     });
     m.once('end', function () {
-        self._after.push(function () {
-            var ix = self._reading.indexOf(m);
-            self._reading.splice(ix, 1);
-        });
+        var ix = self._reading.indexOf(m);
+        self._reading.splice(ix, 1);
     });
+    
+    var next = self._matching[self._matching.length-1];
+    next.pipe(m);
     
     self._matching.push(m);
     self._reading.push(m);
