@@ -90,11 +90,19 @@ Plex.prototype._read = function read (n) {
     }
     if (reads === 0) {
         this._pending = true;
-        r.once('readable', function () { read.call(self) });
+        var onreadable = function () {
+            r.removeListener('readable', onreadable);
+            self.removeListener('_pop', onreadable);
+            self._read(n);
+        };
+        r.once('readable', onreadable);
+        self.once('_pop', onreadable);
     }
     else if (this._next) {
         this._pending = false;
-        this._next();
+        var f = this._next;
+        this._next = null;
+        f();
     }
     else {
         this._pending = true;
@@ -113,13 +121,13 @@ Plex.prototype._write = function (row, enc, next) {
             }
         }
     }
-    else if (row[0] === 'close') {
+    this._matching[0].write(row);
+    
+    if (row[0] === 'close') {
         for (var i = 1, l = this._matching.length; i < l; i++) {
             this._matching[i]._check(this._current);
         }
     }
-    
-    this._matching[0].write(row);
     
     while (this._after.length) this._after.shift()();
     
@@ -134,10 +142,14 @@ Plex.prototype._createMatch = function () {
         var ix = self._matching.indexOf(m);
         self._matching.splice(ix, 1);
         next.unpipe(m);
-        m.end();
         
+        //var ix = self._reading.indexOf(m);
+        //self._reading.splice(ix, 1);
+    });
+    m.once('end', function () {
         var ix = self._reading.indexOf(m);
         self._reading.splice(ix, 1);
+        self.emit('_pop');
     });
     
     var next = self._matching[self._matching.length-1];
