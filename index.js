@@ -92,9 +92,12 @@ Plex.prototype._read = function read (n) {
         this._pending = true;
         r.once('readable', function () { read.call(self) });
     }
-    else {
+    else if (this._next) {
         this._pending = false;
         this._next();
+    }
+    else {
+        this._pending = true;
     }
 };
 
@@ -132,8 +135,7 @@ Plex.prototype._createMatch = function () {
         self._matching.splice(ix, 1);
         next.unpipe(m);
         m.end();
-    });
-    m.once('end', function () {
+        
         var ix = self._reading.indexOf(m);
         self._reading.splice(ix, 1);
     });
