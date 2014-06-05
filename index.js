@@ -15,7 +15,6 @@ function Plex (sel, cb) {
     Duplex.call(this, { objectMode: true });
     this._selectors = [];
     this._matching = [ through.obj() ];
-    this._reading = this._matching.slice();
     this._pending = false;
     
     this._after = [];
@@ -82,7 +81,7 @@ Plex.prototype._updateTree = function (row) {
 
 Plex.prototype._read = function read (n) {
     var self = this;
-    var r = this._reading[this._reading.length - 1];
+    var r = this._matching[this._matching.length - 1];
     var row, reads = 0;
     while ((row = r.read()) !== null) {
         this.push(row);
@@ -129,10 +128,10 @@ Plex.prototype._write = function (row, enc, next) {
         }
     }
     
-    while (this._after.length) this._after.shift()();
-    
     if (this._pending) next()
     else this._next = next;
+    
+    while (this._after.length) this._after.shift()();
 };
 
 Plex.prototype._createMatch = function () {
@@ -143,18 +142,18 @@ Plex.prototype._createMatch = function () {
         self._matching.splice(ix, 1);
         next.unpipe(m);
         
-        //var ix = self._reading.indexOf(m);
-        //self._reading.splice(ix, 1);
-    });
-    m.once('end', function () {
-        var ix = self._reading.indexOf(m);
-        self._reading.splice(ix, 1);
         self.emit('_pop');
+        self._after.push(function () {
+            var f = self._next;
+            if (f) {
+                self._next = null;
+                f();
+            }
+        });
     });
     
     var next = self._matching[self._matching.length-1];
     next.pipe(m);
     
     self._matching.push(m);
-    self._reading.push(m);
 };
