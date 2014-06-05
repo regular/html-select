@@ -92,10 +92,12 @@ Plex.prototype._read = function read (n) {
         var onreadable = function () {
             r.removeListener('readable', onreadable);
             self.removeListener('_pop', onreadable);
+            self.removeListener('_push', onreadable);
             self._read(n);
         };
         r.once('readable', onreadable);
         self.once('_pop', onreadable);
+        self.once('_push', onreadable);
     }
     else if (this._next) {
         this._pending = false;
@@ -137,23 +139,17 @@ Plex.prototype._write = function (row, enc, next) {
 Plex.prototype._createMatch = function () {
     var self = this;
     var m = new Match(this._current);
-    m.once('close', function () {
+    m.once('end', function () {
         var ix = self._matching.indexOf(m);
         self._matching.splice(ix, 1);
         next.unpipe(m);
         
         self.emit('_pop');
-        self._after.push(function () {
-            var f = self._next;
-            if (f) {
-                self._next = null;
-                f();
-            }
-        });
     });
     
     var next = self._matching[self._matching.length-1];
     next.pipe(m);
     
     self._matching.push(m);
+    self.emit('_push');
 };
