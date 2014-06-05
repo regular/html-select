@@ -130,7 +130,10 @@ Plex.prototype._write = function (row, enc, next) {
         }
     }
     
-    if (this._pending) next()
+    if (this._pending) {
+        this._pending = false;
+        next();
+    }
     else this._next = next;
     
     while (this._after.length) this._after.shift()();
