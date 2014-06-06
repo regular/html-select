@@ -31,6 +31,7 @@ test('overlapping transforms', function (t) {
         var d = e.createStream();
         d.pipe(through.obj(function (row, enc, next) {
             this.push([ row[0], row[1].split('').reverse().join('') ]);
+            next();
         })).pipe(d);
     });
     
@@ -49,7 +50,7 @@ test('overlapping transforms', function (t) {
     s.end();
     
     s.pipe(through.obj(function (row, enc, next) {
-        t.deepEqual(row, expected.shift());
+        t.deepEqual(row, expected.shift(), row[1].toString('utf8'));
         next();
     }));
 });
