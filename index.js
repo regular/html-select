@@ -118,7 +118,7 @@ Plex.prototype._write = function (row, enc, next) {
         for (var i = 0, l = this._selectors.length; i < l; i++) {
             var s = this._selectors[i];
             if (s.test(tree)) {
-                this._createMatch();
+                s.fn(this._createMatch());
             }
         }
     }
@@ -155,4 +155,6 @@ Plex.prototype._createMatch = function () {
     
     self._matching.push(m);
     self.emit('_push');
+    
+    return m.createInterface();
 };
