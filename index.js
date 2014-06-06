@@ -132,19 +132,21 @@ Plex.prototype._write = function (row, enc, next) {
     }
     this._matching[0].write(row);
     
-    if (row[0] === 'close') {
-        for (var i = 1, l = this._matching.length; i < l; i++) {
-            this._matching[i]._check(this._current);
+    process.nextTick(function () {
+        if (row[0] === 'close') {
+            for (var i = 1, l = self._matching.length; i < l; i++) {
+                self._matching[i]._check(self._current);
+            }
         }
-    }
-    
-    if (this._pending) {
-        this._pending = false;
-        next();
-    }
-    else this._next = next;
-    
-    while (this._after.length) this._after.shift()();
+        
+        if (self._pending) {
+            self._pending = false;
+            next();
+        }
+        else self._next = next;
+        
+        while (self._after.length) self._after.shift()();
+    });
 };
 
 Plex.prototype._createMatch = function () {
