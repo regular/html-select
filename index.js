@@ -13,6 +13,8 @@ inherits(Plex, Duplex);
 function Plex (sel, cb) {
     if (!(this instanceof Plex)) return new Plex(sel, cb);
     Duplex.call(this, { objectMode: true });
+    var self = this;
+    
     this._selectors = [];
     this._matching = [ through.obj() ];
     this._pending = false;
@@ -29,6 +31,13 @@ function Plex (sel, cb) {
         parent: 'parent',
         children: 'children',
         attr: getAttr
+    });
+    
+    this.once('finish', function () {
+        self._matching[self._matching.length-1].once('end', function () {
+            self.push(null);
+        });
+        self._matching[0].end();
     });
     
     if (sel && cb) this.select(sel, cb);
