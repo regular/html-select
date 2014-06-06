@@ -97,7 +97,6 @@ Plex.prototype._read = function read (n) {
         reads ++;
     }
     if (reads === 0) {
-        this._pending = true;
         var onreadable = function () {
             r.removeListener('readable', onreadable);
             self.removeListener('_pop', onreadable);
