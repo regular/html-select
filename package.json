@@ -13,7 +13,8 @@
     "readable-stream": "^1.0.27-1",
     "duplexer2": "~0.0.2",
     "minimist": "~0.0.8",
-    "split": "~0.3.0"
+    "split": "~0.3.0",
+    "stream-splicer": "^1.1.0"
   },
   "devDependencies": {
     "tape": "^2.13.0",

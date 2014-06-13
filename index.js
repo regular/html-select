@@ -1,74 +1,58 @@
 var through = require('through2');
 var inherits = require('inherits');
-var Duplex = require('readable-stream').Duplex;
-var cssauron = require('cssauron');
+var Splicer = require('stream-splicer');
+var Duplexer = require('readable-stream').Duplexer;
 
 var Match = require('./lib/match.js');
-var parseTag = require('./lib/parse_tag.js');
 var selfClosing = require('./lib/self_closing.js');
+var getTag = require('./lib/get_tag.js');
+var lang = require('./lib/lang.js');
 
 module.exports = Plex;
-inherits(Plex, Duplex);
+inherits(Plex, Splicer);
 
 function Plex (sel, cb) {
-    if (!(this instanceof Plex)) return new Plex(sel, cb);
-    Duplex.call(this, { objectMode: true });
     var self = this;
+    if (!(this instanceof Plex)) return new Plex(sel, cb);
     
-    this._selectors = [];
-    this._matching = [ through.obj() ];
-    this._pending = false;
-    
-    this._after = [];
+    var streams = [ this._pre(), [], this._post() ];
+    Splicer.call(this, streams, { objectMode: true });
     
     this._root = {};
     this._current = this._root;
     
-    this._lang = cssauron({
-        tag: function (node) { return getTag(node) },
-        class: function (node) { return getAttr(node, 'class') },
-        id: function (node) { return getAttr(node, 'id') },
-        parent: 'parent',
-        children: 'children',
-        attr: getAttr
-    });
-    
-    this.once('finish', function () {
-        self._matching[self._matching.length-1].once('end', function () {
-            self.push(null);
-        });
-        self._matching[0].end();
-    });
+    this._selectors = [];
+    this._lang = lang();
     
     if (sel && cb) this.select(sel, cb);
 }
 
-function getTag (node) {
-    if (node.tag) return node.tag;
-    if (!node.row) return undefined;
-    if (!node._parsed) {
-        var p = parseTag(node.row[1]);
-        node._parsed = p;
-        node.tag = p.name;
-    }
-    return node.tag;
-}
-    
-function getAttr (node, k) {
-    var key = k.toLowerCase();
-    if (node.attributes && !key) return node.attributes;
-    else if (node.attributes) return node.attributes[key];
-    if (!node._parsed) {
-        if (!node.row) return undefined;
-        var p = parseTag(node.row[1]);
-        node._parsed = p;
-        node.tag = p.tag;
-    }
-    node.attributes = node._parsed.getAttributes();
-    if (!key) return node.attributes;
-    else return node.attributes[key];
-}
+Plex.prototype._pre = function () {
+    var self = this;
+    return through.obj(function (row, enc, next) {
+        var tree = self._updateTree(row);
+        
+        if (row[0] === 'open') {
+            for (var i = 0, l = self._selectors.length; i < l; i++) {
+                var s = self._selectors[i];
+                if (s.test(tree)) {
+                    s.fn(self._createMatch());
+                }
+            }
+        }
+        
+        this.push([ tree, row ]);
+        next();
+    });
+};
 
+Plex.prototype._post = function () {
+    return through.obj(function (row, enc, next) {
+        this.push(row[1]);
+        next();
+    });
+};
+ 
 Plex.prototype.select = function (sel, cb) {
     this._selectors.push({ test: this._lang(sel), fn: cb });
     return this;
@@ -88,83 +72,13 @@ Plex.prototype._updateTree = function (row) {
     return this._current;
 };
 
-Plex.prototype._read = function read (n) {
-    var self = this;
-    var r = this._matching[this._matching.length - 1];
-    var row, reads = 0;
-    while ((row = r.read()) !== null) {
-        this.push(row);
-        reads ++;
-    }
-    if (reads === 0) {
-        var onreadable = function () {
-            r.removeListener('readable', onreadable);
-            self.removeListener('_pop', onreadable);
-            self.removeListener('_push', onreadable);
-            self._read(n);
-        };
-        r.once('readable', onreadable);
-        self.once('_pop', onreadable);
-        self.once('_push', onreadable);
-    }
-    else if (this._next) {
-        this._pending = false;
-        var f = this._next;
-        this._next = null;
-        f();
-    }
-    else {
-        this._pending = true;
-    }
-};
-
-Plex.prototype._write = function (row, enc, next) {
-    var self = this;
-    var tree = this._updateTree(row);
-    
-    if (row[0] === 'open') {
-        for (var i = 0, l = this._selectors.length; i < l; i++) {
-            var s = this._selectors[i];
-            if (s.test(tree)) {
-                s.fn(this._createMatch());
-            }
-        }
-    }
-    this._matching[0].write(row);
-    
-    process.nextTick(function () {
-        if (row[0] === 'close') {
-            for (var i = 1, l = self._matching.length; i < l; i++) {
-                self._matching[i]._check(self._current);
-            }
-        }
-        
-        if (self._pending) {
-            self._pending = false;
-            next();
-        }
-        else self._next = next;
-        
-        while (self._after.length) self._after.shift()();
-    });
-};
-
 Plex.prototype._createMatch = function () {
-    var self = this;
-    var m = new Match(this._current);
-    m.once('end', function () {
-        var ix = self._matching.indexOf(m);
-        self._matching.splice(ix, 1);
-        next.unpipe(m);
-        
-        self.emit('_pop');
+    var m = new Match(this._selectors);
+    var pipeline = this.get(1);
+    pipeline.push(m);
+    m.once('close', function () {
+        var ix = pipeline.indexOf(m);
+        if (ix >= 0) pipeline.splice(ix, 1);
     });
-    
-    var next = self._matching[self._matching.length-1];
-    next.pipe(m);
-    
-    self._matching.push(m);
-    self.emit('_push');
-    
     return m.createInterface();
 };
