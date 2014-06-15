@@ -48,7 +48,10 @@ Plex.prototype._pre = function () {
 
 Plex.prototype._post = function () {
     return through.obj(function (row, enc, next) {
-        this.push(row[1]);
+        if (row === 'close') {
+            this._matching.close();
+        }
+        else this.push(row[1]);
         next();
     });
 };
@@ -74,6 +77,8 @@ Plex.prototype._updateTree = function (row) {
 
 Plex.prototype._createMatch = function () {
     var m = new Match(this._selectors);
+    this._matching = m;
+    
     var pipeline = this.get(1);
     pipeline.push(m);
     m.once('close', function () {
