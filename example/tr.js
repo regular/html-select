@@ -4,7 +4,7 @@ var through = require('through2');
 var fs = require('fs');
 
 var s = select('dt', function (e) {
-    var tr = through.obj(function (row, buf, next) {
+    var tr = through.obj(function (row, enc, next) {
         this.push([ row[0], String(row[1]).toUpperCase() ]);
         next();
     });
