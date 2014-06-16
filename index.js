@@ -39,7 +39,7 @@ Plex.prototype._pre = function () {
             for (var i = 0, l = self._selectors.length; i < l; i++) {
                 var s = self._selectors[i];
                 if (s.test(tree)) {
-                    s.fn(self._createMatch());
+                    s.fn(self._createMatch(tree));
                 }
             }
         }
@@ -50,6 +50,7 @@ Plex.prototype._pre = function () {
             for (var i = 0; i < pipeline.length; i++) {
                 var s = pipeline.get(i);
                 if (s.finished && s.finished(tree)) {
+console.error('FINISHED');
                     this.push([ 'END', s ]);
                 }
             }
@@ -59,13 +60,6 @@ Plex.prototype._pre = function () {
     });
 };
 
-Plex.prototype._post = function () {
-    return through.obj(function (row, enc, next) {
-        this.push(row[1]);
-        next();
-    });
-};
- 
 Plex.prototype.select = function (sel, cb) {
     this._selectors.push({ test: this._lang(sel), fn: cb });
     return this;
@@ -85,17 +79,13 @@ Plex.prototype._updateTree = function (row) {
     return this._current;
 };
 
-Plex.prototype._createMatch = function () {
-    var m = new Match(this._selectors);
+Plex.prototype._createMatch = function (tree) {
+    var m = new Match(tree);
     var pipeline = this.get(1);
     pipeline.unshift(m, through.obj(null, function () {
+console.error('HEY DONE');
         var ix = pipeline.indexOf(m);
         if (ix >= 0) pipeline.splice(ix, 2);
     }));
-    
-    m.once('close', function () {
-        var ix = pipeline.indexOf(m);
-        if (ix >= 0) pipeline.splice(ix, 1);
-    });
     return m.createInterface();
 };
