@@ -83,7 +83,9 @@ Plex.prototype._updateTree = function (row) {
 Plex.prototype._createMatch = function (tree) {
     var m = new Match(tree);
     var pipeline = this.get(1);
-    pipeline.push(m, through.obj(write, end));
+    var offset = pipeline._streams.length % 2;
+    pipeline.splice(offset, 0, m, through.obj(write, end));
+    
     return m.createInterface();
     
     function write (buf, enc, next) {
