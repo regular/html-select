@@ -39,7 +39,7 @@ Plex.prototype._pre = function () {
             for (var i = 0, l = self._selectors.length; i < l; i++) {
                 var s = self._selectors[i];
                 if (s.test(tree)) {
-                    s.fn(self._createMatch(tree));
+                    s.fn(self._createMatch(tree, row));
                 }
             }
         }
@@ -79,11 +79,10 @@ Plex.prototype._updateTree = function (row) {
     return this._current;
 };
 
-Plex.prototype._createMatch = function (tree) {
-    var m = new Match(tree);
+Plex.prototype._createMatch = function (tree, row) {
+    var m = new Match(tree, row);
     var pipeline = this.get(1);
     pipeline.unshift(m, through.obj(null, function () {
-console.error('HEY DONE');
         var ix = pipeline.indexOf(m);
         if (ix >= 0) pipeline.splice(ix, 2);
     }));
