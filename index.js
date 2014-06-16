@@ -15,7 +15,7 @@ function Plex (sel, cb) {
     var self = this;
     if (!(this instanceof Plex)) return new Plex(sel, cb);
     
-    var streams = [ this._pre(), [], this._post() ];
+    var streams = [ this._pre(), [] ];
     Splicer.call(this, streams, { objectMode: true });
     
     this._root = {};
@@ -29,8 +29,11 @@ function Plex (sel, cb) {
 
 Plex.prototype._pre = function () {
     var self = this;
+    var pipeline;
+    
     return through.obj(function (row, enc, next) {
         var tree = self._updateTree(row);
+        if (!pipeline) pipeline = self.get(1);
         
         if (row[0] === 'open') {
             for (var i = 0, l = self._selectors.length; i < l; i++) {
@@ -41,17 +44,24 @@ Plex.prototype._pre = function () {
             }
         }
         
-        this.push([ tree, row ]);
+        this.push(row);
+        
+        if (row[0] === 'close') {
+            for (var i = 0; i < pipeline.length; i++) {
+                var s = pipeline.get(i);
+                if (s.finished && s.finished(tree)) {
+                    this.push([ 'END', s ]);
+                }
+            }
+        }
+        
         next();
     });
 };
 
 Plex.prototype._post = function () {
     return through.obj(function (row, enc, next) {
-        if (row === 'close') {
-            this._matching.close();
-        }
-        else this.push(row[1]);
+        this.push(row[1]);
         next();
     });
 };
@@ -77,10 +87,12 @@ Plex.prototype._updateTree = function (row) {
 
 Plex.prototype._createMatch = function () {
     var m = new Match(this._selectors);
-    this._matching = m;
-    
     var pipeline = this.get(1);
-    pipeline.push(m);
+    pipeline.unshift(m, through.obj(null, function () {
+        var ix = pipeline.indexOf(m);
+        if (ix >= 0) pipeline.splice(ix, 2);
+    }));
+    
     m.once('close', function () {
         var ix = pipeline.indexOf(m);
         if (ix >= 0) pipeline.splice(ix, 1);
