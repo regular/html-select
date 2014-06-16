@@ -39,7 +39,8 @@ Plex.prototype._pre = function () {
             for (var i = 0, l = self._selectors.length; i < l; i++) {
                 var s = self._selectors[i];
                 if (s.test(tree)) {
-                    s.fn(self._createMatch(tree));
+                    var m = self._createMatch(tree);
+                    this.push([ 'BEGIN', m, s ]);
                 }
             }
         }
@@ -85,8 +86,7 @@ Plex.prototype._createMatch = function (tree) {
     var pipeline = this.get(1);
     var offset = pipeline._streams.length % 2;
     pipeline.splice(offset, 0, m, through.obj(write, end));
-    
-    return m.createInterface();
+    return m;
     
     function write (buf, enc, next) {
         this.push(buf);
