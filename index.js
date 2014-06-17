@@ -47,13 +47,12 @@ Plex.prototype._pre = function () {
         this.push(row);
         
         if (row[0] === 'close') {
-            for (var i = 0; i < pipeline.length; i++) {
-                var s = pipeline.get(i);
-                if (s.finished && s.finished(tree)) {
-                    s.once('end', next);
-                    s.end();
-                    return;
-                }
+            var offset = pipeline._streams.length % 2;
+            var s = pipeline.get(offset);
+            if (s && s.finished && s.finished(tree)) {
+                s.once('close', next);
+                this.push([ 'END' ]);
+                return;
             }
         }
         
@@ -83,17 +82,13 @@ Plex.prototype._updateTree = function (row) {
 Plex.prototype._createMatch = function (tree, fn) {
     var m = new Match(tree, fn);
     var pipeline = this.get(1);
-    var offset = pipeline._streams.length % 2;
-    pipeline.splice(offset, 0, m, through.obj(write, end));
-    return m;
+    if (!pipeline.get(0).finished) pipeline.shift();
+    pipeline.splice(0, 0, m);
     
-    function write (row, enc, next) {
-        this.push(row);
-        next();
-    }
-    
-    function end () {
+    m.once('close', function () {
         var ix = pipeline.indexOf(m);
-        if (ix >= 0) pipeline.splice(ix, 2);
-    }
+        if (ix >= 0) pipeline.splice(ix, 1);
+    });
+    
+    return m;
 };
