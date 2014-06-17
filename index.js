@@ -57,7 +57,7 @@ Plex.prototype._pre = function () {
             }
         }
         
-        next();
+        setImmediate(next);
     });
 };
 
