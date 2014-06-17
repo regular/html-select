@@ -17,7 +17,7 @@ test('overlapping transforms', function (t) {
         [ 'close', '</body>' ],
         [ 'close', '</html>' ]
     ];
-    t.plan(expected.length);
+    t.plan(expected.length + 3);
     
     var s = select();
     s.select('.loud', function (e) {
@@ -30,6 +30,7 @@ test('overlapping transforms', function (t) {
     s.select('span', function (e) {
         var d = e.createStream();
         d.pipe(through.obj(function (row, enc, next) {
+            t.ok(!/[A-Z]/.test(row[1]), 'not upper-case in <span>');
             this.push([ row[0], row[1].split('').reverse().join('') ]);
             next();
         })).pipe(d);
