@@ -47,8 +47,7 @@ Plex.prototype._pre = function () {
         this.push(row);
         
         if (row[0] === 'close') {
-            var offset = pipeline._streams.length % 2;
-            var s = pipeline.get(offset);
+            var s = pipeline.get(0);
             if (s && s.finished && s.finished(tree)) {
                 s.once('close', next);
                 this.push([ 'END' ]);
