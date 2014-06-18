@@ -46,18 +46,17 @@ Plex.prototype._pre = function () {
             }
         }
         
-        this.push(row);
-        
         if ((matched && tree.selfClosing) || row[0] === 'close') {
             var s = pipeline.get(0);
             if (s && s.finished && s.finished(tree)) {
                 s.once('close', function () {
                     setImmediate(next);
                 });
-                this.push([ 'END' ]);
+                this.push([ 'END', row ]);
                 return;
             }
         }
+        this.push(row);
         
         setImmediate(next);
     });
