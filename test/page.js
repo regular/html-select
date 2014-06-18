@@ -38,7 +38,7 @@ test('page *', function (t) {
         [ 'text', Buffer('robot') ],
         [ 'close', Buffer('</span>') ]
     ];
-    t.plan(expected.length);
+    t.plan(expected.length + 2);
     var s = select('.content *', function (e) {
         t.ok(true, 'match');
         e.createReadStream().pipe(through.obj(function (row, enc, next) {
