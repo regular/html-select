@@ -40,6 +40,7 @@ test('page *', function (t) {
     ];
     t.plan(expected.length);
     var s = select('.content *', function (e) {
+        t.ok(true, 'match');
         e.createReadStream().pipe(through.obj(function (row, enc, next) {
             t.deepEqual(row, expected.shift());
             next();
