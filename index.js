@@ -8,6 +8,9 @@ var selfClosing = require('./lib/self_closing.js');
 var getTag = require('./lib/get_tag.js');
 var lang = require('./lib/lang.js');
 
+var nextTick = typeof setImmediate !== 'undefined'
+    ? setImmediate : process.nextTick;
+
 module.exports = Plex;
 inherits(Plex, Splicer);
 
@@ -50,7 +53,7 @@ Plex.prototype._pre = function () {
             var s = pipeline.get(0);
             if (s && s.finished && s.finished(tree)) {
                 s.once('close', function () {
-                    setImmediate(next);
+                    nextTick(next);
                 });
                 this.push([ 'END', row ]);
                 return;
@@ -58,7 +61,7 @@ Plex.prototype._pre = function () {
         }
         this.push(row);
         
-        setImmediate(next);
+        next();
     });
 };
 
