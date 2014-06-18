@@ -49,7 +49,9 @@ Plex.prototype._pre = function () {
         if (row[0] === 'close') {
             var s = pipeline.get(0);
             if (s && s.finished && s.finished(tree)) {
-                s.once('close', next);
+                s.once('close', function () {
+                    setImmediate(next);
+                });
                 this.push([ 'END' ]);
                 return;
             }
