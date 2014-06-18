@@ -53,6 +53,31 @@ test('implicit close', function (t) {
     s.resume();
 });
 
+test('implicit close duplex', function (t) {
+    var expected = [
+        [ 'open', '<b>' ],
+        [ 'text', 'beep boop' ]
+    ];
+    t.plan(expected.length);
+    var s = select('div b', function (e) {
+        var s = e.createStream();
+        s.pipe(through.obj(function (row, enc, next) {
+            t.deepEqual(row, expected.shift());
+            next();
+        })).pipe(s);
+    });
+    s.write([ 'open', '<html>' ]);
+    s.write([ 'open', '<body>' ]);
+    s.write([ 'open', '<div>' ]);
+    s.write([ 'open', '<b>' ]);
+    s.write([ 'text', 'beep boop' ]);
+    s.write([ 'close', '</div>' ]);
+    s.write([ 'close', '</body>' ]);
+    s.write([ 'close', '</html>' ]);
+    s.end();
+    s.resume();
+});
+
 test('implicit close outer content', function (t) {
     var expected = [
         [ 'open', '<div>' ],
