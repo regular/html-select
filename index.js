@@ -35,18 +35,20 @@ Plex.prototype._pre = function () {
         var tree = self._updateTree(row);
         if (!pipeline) pipeline = self.get(1);
         
+        var matched = null;
+        
         if (row[0] === 'open') {
             for (var i = 0, l = self._selectors.length; i < l; i++) {
                 var s = self._selectors[i];
                 if (s.test(tree)) {
-                    self._createMatch(tree, s.fn);
+                    matched = self._createMatch(tree, s.fn);
                 }
             }
         }
         
         this.push(row);
         
-        if (row[0] === 'close') {
+        if ((matched && tree.selfClosing) || row[0] === 'close') {
             var s = pipeline.get(0);
             if (s && s.finished && s.finished(tree)) {
                 s.once('close', function () {

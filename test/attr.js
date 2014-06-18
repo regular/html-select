@@ -156,8 +156,6 @@ test('attribute whitespace around quotes', function (t) {
 });
 
 test('exact attribute value with spaces', function (t) {
-console.error('SKIP UNTIL CSSAURON UPDATES');
-return t.end();
     var expected = [
         [ 'open', '<img class="a b c">' ]
     ];
