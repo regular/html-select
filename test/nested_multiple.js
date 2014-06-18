@@ -12,10 +12,14 @@ test('nested divs', function (t) {
     ];
     t.plan(expected.length);
     s.select('ul', function (e) {
-        t.equal(e._first[1].toString(), expected.shift());
+        e.createReadStream().once('data', function (r) {
+            t.equal(r[1].toString(), expected.shift());
+        });
     });
     s.select('li', function (e) {
-        t.equal(e._first[1].toString(), expected.shift());
+        e.createReadStream().once('data', function (r) {
+            t.equal(r[1].toString(), expected.shift());
+        });
     });
     fs.createReadStream(__dirname + '/nested_multiple/index.html')
         .pipe(tokenize()).pipe(s)
