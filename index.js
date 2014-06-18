@@ -84,7 +84,9 @@ Plex.prototype._updateTree = function (row) {
 Plex.prototype._createMatch = function (tree, fn) {
     var m = new Match(tree, fn);
     var pipeline = this.get(1);
-    if (!pipeline.get(0).finished) pipeline.shift();
+    if (pipeline.length > 0 && !pipeline.get(0).finished) {
+        pipeline.shift();
+    }
     pipeline.splice(0, 0, m);
     
     m.once('close', function () {
