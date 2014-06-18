@@ -12,7 +12,9 @@ test('nested divs', function (t) {
     ];
     t.plan(expected.length);
     s.select('div', function (e) {
-        t.equal(e._first[1].toString(), expected.shift());
+        e.createReadStream().once('data', function (r) {
+            t.equal(r[1].toString(), expected.shift());
+        });
     });
     fs.createReadStream(__dirname + '/nested_divs/index.html')
         .pipe(tokenize()).pipe(s)
