@@ -97,9 +97,14 @@ Plex.prototype._createMatch = function (tree, fn) {
     }
     pipeline.splice(0, 0, m);
     
-    m.once('close', function () {
+    m.once('close', function (last) {
         var ix = pipeline.indexOf(m);
         if (ix >= 0) pipeline.splice(ix, 1);
+        
+        var next = pipeline.get(ix);
+        if (next && next._start === tree) {
+            next.write([ 'END', last ]);
+        }
     });
     
     return m;
