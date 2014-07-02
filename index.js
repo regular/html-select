@@ -90,6 +90,7 @@ Plex.prototype._updateTree = function (row) {
 };
 
 Plex.prototype._createMatch = function (tree, fn) {
+    var self = this;
     var m = new Match(tree, fn);
     var pipeline = this.get(1);
     if (pipeline.length > 0 && !pipeline.get(0).finished) {
