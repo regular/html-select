@@ -8,14 +8,13 @@ var tokenize = require('html-tokenize');
 test('first', function (t) {
     t.plan(2);
     var expected = [ 'AAA', 'DDD' ];
-    var strip = through.obj(function (row, enc, next) {
-        this.push(row[1]);
-        next();
-    });
-    
     var sel = select();
     sel.select('.row *:first', function (elem) {
         var ex = expected.shift();
+        var strip = through.obj(function (row, enc, next) {
+            this.push(row[1]);
+            next();
+        });
         elem.createReadStream().pipe(strip).pipe(concat(function (body) {
             t.equal(body.toString('utf8'), ex);
         }));
