@@ -101,6 +101,7 @@ Plex.prototype._createMatch = function (tree, fn) {
     m.once('close', function () {
         var ix = pipeline.indexOf(m);
         if (ix >= 0) pipeline.splice(ix, 1);
+        pipeline.unshift(through.obj());
         
         var next = pipeline.get(ix);
         if (next && next._start === tree) {
