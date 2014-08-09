@@ -18,7 +18,7 @@ function Plex (sel, cb) {
     var self = this;
     if (!(this instanceof Plex)) return new Plex(sel, cb);
     
-    var streams = [ this._pre(), [] ];
+    var streams = [ this._pre(), [], this._post() ];
     Splicer.call(this, streams, { objectMode: true });
     
     this._root = {};
@@ -66,6 +66,13 @@ Plex.prototype._pre = function () {
         
         this.push(row);
         
+        next();
+    });
+};
+
+Plex.prototype._post = function () {
+    return through.obj(function (row, enc, next) {
+        if (row[0] !== 'LAST') this.push(row);
         next();
     });
 };
