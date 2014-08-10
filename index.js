@@ -49,6 +49,10 @@ Plex.prototype._pre = function () {
             }
         }
         
+        if (row[0] === 'open' && tree.selfClosing && tree.parent) {
+            self._current = self._current.parent;
+        }
+        
         if ((matched && tree.selfClosing) || row[0] === 'close') {
             var s = pipeline.get(0);
             if (s && s.finished && s.finished(tree)) {
@@ -58,10 +62,6 @@ Plex.prototype._pre = function () {
                 this.push([ 'END', row ]);
                 return;
             }
-        }
-        
-        if (row[0] === 'open' && tree.selfClosing && tree.parent) {
-            self._current = self._current.parent;
         }
         
         this.push(row);
