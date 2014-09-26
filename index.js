@@ -45,6 +45,7 @@ Plex.prototype._pre = function () {
                 var s = self._selectors[i];
                 if (s.test(tree)) {
                     matched = self._createMatch(tree, s.fn);
+                    this.push(['FIRST', matched]);
                 }
             }
         }
