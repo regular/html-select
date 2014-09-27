@@ -1,6 +1,6 @@
 {
   "name": "html-select",
-  "version": "2.3.18",
+  "version": "2.3.20",
   "description": "match a tokenized html stream with css selectors",
   "main": "index.js",
   "bin": {
