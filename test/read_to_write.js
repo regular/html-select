@@ -94,5 +94,7 @@ test('read inner to write inner', function (t) {
 });
 
 function readStream () {
-    return fs.createReadStream(__dirname + '/write_inner/index.html');
+    var s = through();
+    s.end('<ul><li>item1</li><li>item2</li></ul>');
+    return s;
 }
