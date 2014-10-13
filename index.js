@@ -73,7 +73,7 @@ Plex.prototype._pre = function () {
 
 Plex.prototype._post = function () {
     return through.obj(function (row, enc, next) {
-        if (row[0] !== 'LAST' && row[0] !== 'FIRST') this.push(row);
+        if (row[0] !== 'FIRST') this.push(row);
         next();
     });
 };
