@@ -7,19 +7,19 @@
     "html-select": "bin/cmd.js"
   },
   "dependencies": {
-    "inherits": "^2.0.1",
-    "through2": "^1.0.0",
-    "cssauron": "^1.1.0",
-    "readable-stream": "^1.0.27-1",
-    "duplexer2": "~0.0.2",
-    "minimist": "~0.0.8",
-    "split": "~0.3.0",
-    "stream-splicer": "^1.2.0"
+    "inherits": "^2.0.4",
+    "through2": "^4.0.2",
+    "cssauron": "^1.4.0",
+    "readable-stream": "^3.6.0",
+    "duplexer2": "~0.1.4",
+    "minimist": "~1.2.5",
+    "split": "~1.0.1",
+    "stream-splicer": "^2.0.1"
   },
   "devDependencies": {
-    "concat-stream": "^1.4.6",
-    "html-tokenize": "^1.0.0",
-    "tape": "^2.13.0",
+    "concat-stream": "^2.0.0",
+    "html-tokenize": "^2.0.1",
+    "tape": "^5.0.1",
     "dev-null": "~0.1.1"
   },
   "scripts": {
